@@ -1,18 +1,29 @@
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+// Built-in LED is on pin 13
+const int LED_PIN = 13;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    // Initialize LED pin as an output
+    pinMode(LED_PIN, OUTPUT);
+    
+    // Initialize serial communication
+    Serial1.begin(9600);
+    while (!Serial1) {
+        ; // Wait for serial connection
+    }
+    
+    Serial1.println("Teensy 4.1 LED Blink started!");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    // Turn LED on
+    digitalWriteFast(LED_PIN, HIGH);
+    Serial1.println("LED ON");
+    delay(1000);  // Wait for 1 second
+    
+    // Turn LED off
+    digitalWriteFast(LED_PIN, LOW);
+    Serial1.println("LED OFF");
+    delay(1000);  // Wait for 1 second
 }

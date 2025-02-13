@@ -167,5 +167,5 @@ void loop() {
         }
     }
 
-    delay(10);  // Small delay to prevent overwhelming the system
+    delay(1);  // Small delay to prevent overwhelming the system
 }

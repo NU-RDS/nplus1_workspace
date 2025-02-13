@@ -13,7 +13,7 @@ documentation.
 import can
 import struct
 
-node_id = 0 # must match `<odrv>.axis0.config.can.node_id`. The default is 0.
+node_id = 2 # must match `<odrv>.axis0.config.can.node_id`. The default is 0.
 
 bus = can.Bus(
     interface='slcan',  # or the appropriate interface for your adapter

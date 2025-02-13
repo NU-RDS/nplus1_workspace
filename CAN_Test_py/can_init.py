@@ -26,7 +26,7 @@ def send_odrive_command(bus, node_id, command_id, data=None):
 def main():
     try:
         bus = setup_can()
-        node_id = 0
+        node_id = 2
         
         # 1. Clear any pending messages
         print("\nClearing message queue...")

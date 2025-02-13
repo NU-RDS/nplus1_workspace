@@ -2,9 +2,22 @@
 
 // Global variables
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
-ODriveCAN odrv0(wrap_can_intf(can_intf), ODRV0_NODE_ID);
+
+ODriveCAN odrv0(wrap_can_intf(can_intf), 0);
 ODriveUserData odrv0_user_data;
-ODriveCAN* odrives[] = {&odrv0};
+
+ODriveCAN odrv1(wrap_can_intf(can_intf), 1);
+ODriveUserData odrv1_user_data;
+
+ODriveCAN odrv2(wrap_can_intf(can_intf), 2);
+ODriveUserData odrv2_user_data;
+
+ODriveCAN* odrives[] = {&odrv0, &odrv1, &odrv2};
+ODriveUserData* odriveData[] = {&odrv0_user_data, &odrv1_user_data, &odrv2_user_data};
+
+// Constants for angle conversion
+const float DEG_TO_TURNS = 1.0f / 360.0f;  // Convert degrees to turns
+const float VELOCITY_FF = 0.25f;  // Velocity feed-forward in turns per second (slower movement)
 
 // CAN setup implementation
 bool setupCan() {
@@ -31,7 +44,6 @@ void onFeedback(Get_Encoder_Estimates_msg_t& msg, void* user_data) {
 }
 
 void onCanMessage(const CAN_message_t& msg) {
-    Serial.println("got msg");
     for (auto odrive : odrives) {
         onReceive(msg, *odrive);
     }
@@ -51,6 +63,10 @@ void setup() {
     // Register callbacks
     odrv0.onFeedback(onFeedback, &odrv0_user_data);
     odrv0.onStatus(onHeartbeat, &odrv0_user_data);
+    odrv1.onFeedback(onFeedback, &odrv1_user_data);
+    odrv1.onStatus(onHeartbeat, &odrv1_user_data);
+    odrv2.onFeedback(onFeedback, &odrv2_user_data);
+    odrv2.onStatus(onHeartbeat, &odrv2_user_data);
 
     // Initialize CAN
     if (!setupCan()) {
@@ -61,22 +77,24 @@ void setup() {
     Serial.println("Waiting for ODrive...");
     while (!odrv0_user_data.received_heartbeat) {
         pumpEvents(can_intf);
+        Serial.println("Odrive 0 is ready.");
+        delay(100);
+    }
+    while (!odrv1_user_data.received_heartbeat) {
+        pumpEvents(can_intf);
+        Serial.println("Odrive 1 is ready.");
+        delay(100);
+    }
+    while (!odrv2_user_data.received_heartbeat) {
+        pumpEvents(can_intf);
+        Serial.println("Odrive 2 is ready.");
         delay(100);
     }
 
-    Serial.println("found ODrive");
+    Serial.println("Found all ODrives");
 
-    // Read bus voltage and current
-    Get_Bus_Voltage_Current_msg_t vbus;
-    if (!odrv0.request(vbus, 1)) {
-        Serial.println("vbus request failed!");
-        while (true);
-    }
-
-    Serial.print("DC voltage [V]: ");
-    Serial.println(vbus.Bus_Voltage);
-    Serial.print("DC current [A]: ");
-    Serial.println(vbus.Bus_Current);
+    // Set control mode to position control
+    odrv0.setControllerMode(ODriveControlMode::CONTROL_MODE_POSITION_CONTROL, ODriveInputMode::INPUT_MODE_PASSTHROUGH);
 
     Serial.println("Enabling closed loop control...");
     while (odrv0_user_data.last_heartbeat.Axis_State != ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL) {
@@ -91,27 +109,44 @@ void setup() {
     }
 
     Serial.println("ODrive running!");
+    Serial.println("Enter angle in degrees to move relative to current position (e.g. 30):");
+    Serial.print("Movement speed set to: ");
+    Serial.print(VELOCITY_FF);
+    Serial.println(" turns per second");
 }
 
 void loop() {
     pumpEvents(can_intf);
 
-    float SINE_PERIOD = 2.0f;
-    float t = 0.001 * millis();
-    float phase = t * (TWO_PI / SINE_PERIOD);
+    // Check if there's serial input available
+    if (Serial.available() > 0) {
+        // Read the desired angle change in degrees
+        float angleChange = Serial.parseFloat();
+        Serial.read(); // Clear the newline character
+        
+        // Get current position
+        float currentPos = odrv0_user_data.last_feedback.Pos_Estimate;
+        
+        // Calculate new position in turns (ODrive uses turns as unit)
+        float newPos = currentPos + (angleChange * DEG_TO_TURNS);
+        
+        // Set new position with velocity feed-forward for smoother movement
+        odrv0.setPosition(newPos, VELOCITY_FF, 0.0f);
+        
+        Serial.print("Moving to new position: ");
+        Serial.print(newPos);
+        Serial.print(" turns at ");
+        Serial.print(VELOCITY_FF);
+        Serial.println(" turns/second");
+    }
 
-    odrv0.setPosition(
-        sin(phase),
-        cos(phase) * (TWO_PI / SINE_PERIOD)
-    );
-
+    // Print feedback if available
     if (odrv0_user_data.received_feedback) {
         Get_Encoder_Estimates_msg_t feedback = odrv0_user_data.last_feedback;
         odrv0_user_data.received_feedback = false;
-        Serial.print("odrv0-pos:");
+        Serial.print("Current position (turns): ");
         Serial.print(feedback.Pos_Estimate);
-        Serial.print(",");
-        Serial.print("odrv0-vel:");
+        Serial.print(", velocity: ");
         Serial.println(feedback.Vel_Estimate);
     }
 }

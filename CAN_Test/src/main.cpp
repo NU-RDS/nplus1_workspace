@@ -9,7 +9,7 @@ ODriveUserData odrv0_user_data;
 // Constants
 const float CONSTANT_TORQUE = 0.0036f;  // Constant torque value
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
-const float TARGET_REV = 5.0f;  // Target 5 revolutions
+const float TARGET_REV = 2.0f;  // Target 5 revolutions
 
 unsigned long start_time = 0;
 unsigned long last_feedback_time = 0;
@@ -144,7 +144,7 @@ void loop() {
             // Check if we've reached target position
             if (current_pos < target_pos) {
                 // Continue running motor
-                odrv0.setTorque(CONSTANT_TORQUE);
+                odrv0.setTorque(-CONSTANT_TORQUE);
                 
                 // Print feedback with delay
                 if (current_time - last_feedback_time >= FEEDBACK_DELAY) {

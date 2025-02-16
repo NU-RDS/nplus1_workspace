@@ -25,6 +25,8 @@ struct ODriveUserData {
     bool received_heartbeat = false;
     Get_Encoder_Estimates_msg_t last_feedback;
     bool received_feedback = false;
+    Get_Iq_msg_t = last_current;
+    bool received_current = false;
 };
 
 // Function declarations
@@ -32,11 +34,6 @@ bool setupCan();
 void onCanMessage(const CAN_message_t& msg);
 void onHeartbeat(Heartbeat_msg_t& msg, void* user_data);
 void onFeedback(Get_Encoder_Estimates_msg_t& msg, void* user_data);
-
-// External declarations
-// extern FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
-// extern ODriveCAN odrv0;
-// extern ODriveUserData odrv0_user_data;
-// extern ODriveCAN* odrives[];
+void getCurrent(Get_Iq_msg_t& msg, void* user_data);
 
 #endif // ODRIVE_CAN_HPP

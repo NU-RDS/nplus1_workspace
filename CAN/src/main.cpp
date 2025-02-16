@@ -1,4 +1,7 @@
 #include "odrive_can.hpp"
+#include "kinematics.hpp"
+#include "pvPID.hpp"
+#include "tensioning.hpp"
 
 // Global variables
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
@@ -16,44 +19,17 @@ struct ODriveControl {
     {ODriveCAN(wrap_can_intf(can_intf), 2), ODriveUserData(), false, 0.0f}
 };
 
+PVPID controllers[NUM_DRIVES];
+
 // Constants
 const float CONSTANT_TORQUE = 0.0036f;
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
-
-// CAN setup implementation
-bool setupCan() {
-    can_intf.begin();
-    can_intf.setBaudRate(CAN_BAUDRATE);
-    can_intf.setMaxMB(16);
-    can_intf.enableFIFO();
-    can_intf.enableFIFOInterrupt();
-    can_intf.onReceive(onCanMessage);
-    return true;
-}
-
-// Callback implementations
-void onHeartbeat(Heartbeat_msg_t& msg, void* user_data) {
-    ODriveUserData* odrv_user_data = static_cast<ODriveUserData*>(user_data);
-    odrv_user_data->last_heartbeat = msg;
-    odrv_user_data->received_heartbeat = true;
-}
-
-void onFeedback(Get_Encoder_Estimates_msg_t& msg, void* user_data) {
-    ODriveUserData* odrv_user_data = static_cast<ODriveUserData*>(user_data);
-    odrv_user_data->last_feedback = msg;
-    odrv_user_data->received_feedback = true;
-}
-
-void onCanMessage(const CAN_message_t& msg) {
-    for (int i = 0; i < NUM_DRIVES; i++) {
-        onReceive(msg, odrives[i].drive);
-    }
-}
 
 void setupODrive(int index) {
     // Register callbacks
     odrives[index].drive.onFeedback(onFeedback, &odrives[index].user_data);
     odrives[index].drive.onStatus(onHeartbeat, &odrives[index].user_data);
+    odrives[index].drive.getCurrent(getCurrents, &odrives[index].user_data);
 
     // Set control mode to torque control
     odrives[index].drive.setControllerMode(ODriveControlMode::CONTROL_MODE_TORQUE_CONTROL, 
@@ -97,6 +73,12 @@ void processSerialCommand() {
     }
 }
 
+void setupController(int index) {
+    controllers[index].setPositionGains(1.0, 0.1, 0.01);
+    controllers[index].setVelocityGains(0.1, 0.01, 0.001);
+    controllers[index].setTorqueLimits(-CONSTANT_TORQUE, CONSTANT_TORQUE);
+}
+
 void setup() {
     Serial.begin(115200);
     while (!Serial) delay(100);
@@ -122,6 +104,9 @@ void setup() {
 void loop() {
     pumpEvents(can_intf);
     
+    // Auto-tensioning
+    bool tensionSuccess = autoTension(odrives);
+
     // Process any incoming serial commands
     processSerialCommand();
     
@@ -152,6 +137,13 @@ void loop() {
                 Serial.println(feedback.Vel_Estimate);
                 last_feedback_time = current_time;
             }
+
+            // PID
+            // float torque = controllers[i].update(
+            //     odrives[i].user_data.last_feedback.Pos_Estimate,
+            //     odrives[i].user_data.last_feedback.Vel_Estimate
+            // );
+            // odrives[i].drive.setTorque(torque);
         }
     }
 

@@ -1,95 +1,135 @@
-#include "pvPID.hpp"
+// #include <vector>
+// #include <cmath>
+// #include <chrono>
 
-PVPID::PVPID(float pos_kp, float pos_ki, float pos_kd,
-             float vel_kp, float vel_ki, float vel_kd)
-    : pos_kp_(pos_kp), pos_ki_(pos_ki), pos_kd_(pos_kd),
-      vel_kp_(vel_kp), vel_ki_(vel_ki), vel_kd_(vel_kd),
-      target_position_(0.0f), target_velocity_(0.0f),
-      prev_pos_error_(0.0f), prev_vel_error_(0.0f),
-      pos_integral_(0.0f), vel_integral_(0.0f),
-      prev_time_(micros()),
-      min_torque_(-1.0f), max_torque_(1.0f),
-      pos_integral_limit_(1.0f), vel_integral_limit_(1.0f)
-{
-}
+// #include "pvPID.hpp"
 
-void PVPID::setTargets(float position, float velocity) {
-    target_position_ = position;
-    target_velocity_ = velocity;
-}
+// class JointPIDController {
+// private:
+//     // Gains
+//     double kp, ki, kd;
+    
+//     // Error terms
+//     double integral_error;
+//     double prev_error;
+    
+//     // Control limits
+//     double max_torque;
+//     double min_torque;
+    
+//     // Timing
+//     std::chrono::steady_clock::time_point last_update;
+    
+//     // Initialize timing
+//     void initTiming() {
+//         last_update = std::chrono::steady_clock::now();
+//     }
+    
+// public:
+//     JointPIDController(double p_gain, double i_gain, double d_gain, 
+//                       double max_t, double min_t) 
+//         : kp(p_gain), ki(i_gain), kd(d_gain),
+//           max_torque(max_t), min_torque(min_t),
+//           integral_error(0.0), prev_error(0.0) {
+//         initTiming();
+//     }
+    
+//     // Reset controller state
+//     void reset() {
+//         integral_error = 0.0;
+//         prev_error = 0.0;
+//         initTiming();
+//     }
+    
+//     // Compute control output
+//     double computeTorque(double target_angle, double current_angle, double feedforward = 0.0) {
+//         // Get time delta
+//         auto current_time = std::chrono::steady_clock::now();
+//         double dt = std::chrono::duration<double>(current_time - last_update).count();
+//         last_update = current_time;
+        
+//         // Compute error
+//         double error = target_angle - current_angle;
+        
+//         // Update integral term with anti-windup
+//         integral_error += error * dt;
+        
+//         // Compute derivative term
+//         double derivative = dt > 0.0 ? (error - prev_error) / dt : 0.0;
+//         prev_error = error;
+        
+//         // Compute PID output
+//         double output = kp * error + ki * integral_error + kd * derivative;
+        
+//         // Add feedforward term
+//         output += feedforward;
+        
+//         // Apply torque limits
+//         return std::max(min_torque, std::min(max_torque, output));
+//     }
+// };
 
-float PVPID::update(float current_position, float current_velocity) {
-    // Calculate time delta
-    unsigned long current_time = micros();
-    float dt = (current_time - prev_time_) / 1000000.0f;  // Convert to seconds
-    prev_time_ = current_time;
+// class FingerController {
+// private:
+//     JointPIDController proximal_joint;
+//     JointPIDController distal_joint;
+    
+// public:
+//     FingerController(
+//         double prox_p, double prox_i, double prox_d,
+//         double dist_p, double dist_i, double dist_d,
+//         double max_torque = 1.0, double min_torque = -1.0)
+//         : proximal_joint(prox_p, prox_i, prox_d, max_torque, min_torque),
+//           distal_joint(dist_p, dist_i, dist_d, max_torque, min_torque) {}
+    
+//     std::vector<double> computeTorques(
+//         const std::vector<double>& target_angles,
+//         const std::vector<double>& current_angles,
+//         const std::vector<double>& feedforward = {0.0, 0.0}) {
+        
+//         if (target_angles.size() != 2 || current_angles.size() != 2) {
+//             throw std::invalid_argument("Both target and current angles must have size 2");
+//         }
+        
+//         std::vector<double> torques(2);
+//         torques[0] = proximal_joint.computeTorque(
+//             target_angles[0], current_angles[0], 
+//             feedforward.size() > 0 ? feedforward[0] : 0.0);
+        
+//         torques[1] = distal_joint.computeTorque(
+//             target_angles[1], current_angles[1],
+//             feedforward.size() > 1 ? feedforward[1] : 0.0);
+        
+//         return torques;
+//     }
+    
+//     void reset() {
+//         proximal_joint.reset();
+//         distal_joint.reset();
+//     }
+// };
 
-    // Ensure dt is reasonable (handle micros() overflow or very long delays)
-    if (dt > 0.1f || dt <= 0.0f) {
-        dt = 0.001f;  // Default to 1ms if dt is unreasonable
-    }
-
-    // Position error calculations
-    float pos_error = target_position_ - current_position;
-    pos_integral_ += pos_error * dt;
-    pos_integral_ = limit(pos_integral_, -pos_integral_limit_, pos_integral_limit_);
-    float pos_derivative = (pos_error - prev_pos_error_) / dt;
-    prev_pos_error_ = pos_error;
-
-    // Position PID output (becomes velocity target)
-    float velocity_target = target_velocity_ + 
-                          pos_kp_ * pos_error +
-                          pos_ki_ * pos_integral_ +
-                          pos_kd_ * pos_derivative;
-
-    // Velocity error calculations
-    float vel_error = velocity_target - current_velocity;
-    vel_integral_ += vel_error * dt;
-    vel_integral_ = limit(vel_integral_, -vel_integral_limit_, vel_integral_limit_);
-    float vel_derivative = (vel_error - prev_vel_error_) / dt;
-    prev_vel_error_ = vel_error;
-
-    // Calculate final torque command
-    float torque = vel_kp_ * vel_error +
-                  vel_ki_ * vel_integral_ +
-                  vel_kd_ * vel_derivative;
-
-    // Limit output torque
-    return limit(torque, min_torque_, max_torque_);
-}
-
-void PVPID::reset() {
-    prev_pos_error_ = 0.0f;
-    prev_vel_error_ = 0.0f;
-    pos_integral_ = 0.0f;
-    vel_integral_ = 0.0f;
-    prev_time_ = micros();
-}
-
-void PVPID::setPositionGains(float kp, float ki, float kd) {
-    pos_kp_ = kp;
-    pos_ki_ = ki;
-    pos_kd_ = kd;
-}
-
-void PVPID::setVelocityGains(float kp, float ki, float kd) {
-    vel_kp_ = kp;
-    vel_ki_ = ki;
-    vel_kd_ = kd;
-}
-
-void PVPID::setTorqueLimits(float min_torque, float max_torque) {
-    min_torque_ = min_torque;
-    max_torque_ = max_torque;
-}
-
-void PVPID::setIntegratorLimits(float pos_limit, float vel_limit) {
-    pos_integral_limit_ = pos_limit;
-    vel_integral_limit_ = vel_limit;
-}
-
-float PVPID::limit(float value, float min_val, float max_val) {
-    if (value < min_val) return min_val;
-    if (value > max_val) return max_val;
-    return value;
-}
+// // Example usage
+// int main() {
+//     // Initialize controller with PID gains
+//     FingerController finger(
+//         1.0, 0.1, 0.05,  // Proximal joint PID gains
+//         0.8, 0.08, 0.04, // Distal joint PID gains
+//         2.0,  // Max torque
+//         -2.0  // Min torque
+//     );
+    
+//     // Target angles (in radians)
+//     std::vector<double> targets = {M_PI/4, M_PI/3};
+    
+//     // Current angles (in radians)
+//     std::vector<double> current = {0.0, 0.0};
+    
+//     // Optional feedforward terms
+//     std::vector<double> feedforward = {0.1, 0.1};
+    
+//     // Compute control torques
+//     std::vector<double> torques = finger.computeTorques(targets, current, feedforward);
+    
+//     return 0;
+// }

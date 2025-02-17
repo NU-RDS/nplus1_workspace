@@ -81,17 +81,37 @@ void processSerialCommand() {
         int commaIndex = command.indexOf(',');
         if (commaIndex != -1) {
             int driveNum = command.substring(0, commaIndex).toInt();
-            bool clockwise = command.substring(commaIndex + 1).equals("true");
+            String cmd = command.substring(commaIndex + 1);
             
             if (driveNum >= 0 && driveNum < NUM_DRIVES) {
-                float torque = clockwise ? CONSTANT_TORQUE : -CONSTANT_TORQUE;
-                odrives[driveNum].current_torque = torque;
-                odrives[driveNum].is_running = true;
-                odrives[driveNum].drive.setTorque(torque);
-                
-                Serial.print("Starting ODrive ");
-                Serial.print(driveNum);
-                Serial.println(clockwise ? " CW" : " CCW");
+                if (cmd == "get_current") {
+                    // Get current values
+                    Get_Iq_msg_t current_msg;
+                    if (odrives[driveNum].drive.getCurrents(current_msg)) {
+                        Serial.print("ODrive ");
+                        Serial.print(driveNum);
+                        Serial.print(" Currents - Iq_Setpoint: ");
+                        Serial.print(current_msg.Iq_Setpoint);
+                        Serial.print(", Iq_Measured: ");
+                        Serial.print(current_msg.Iq_Measured);
+                    } else {
+                        Serial.print("ODrive ");
+                        Serial.print(driveNum);
+                        Serial.println(" - Failed to get currents");
+                    }
+                }
+                else if (cmd == "true" || cmd == "false") {
+                    // Your existing rotation logic
+                    bool clockwise = cmd.equals("true");
+                    float torque = clockwise ? CONSTANT_TORQUE : -CONSTANT_TORQUE;
+                    odrives[driveNum].current_torque = torque;
+                    odrives[driveNum].is_running = true;
+                    odrives[driveNum].drive.setTorque(torque);
+
+                    Serial.print("Starting ODrive ");
+                    Serial.print(driveNum);
+                    Serial.println(clockwise ? " CW" : " CCW");
+                }
             }
         }
     }

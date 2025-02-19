@@ -29,7 +29,7 @@ void setupODrive(int index) {
     // Register callbacks
     odrives[index].drive.onFeedback(onFeedback, &odrives[index].user_data);
     odrives[index].drive.onStatus(onHeartbeat, &odrives[index].user_data);
-    odrives[index].drive.getCurrent(getCurrents, &odrives[index].user_data);
+    // odrives[index].drive.getCurrent(getCurrents, &odrives[index].user_data);
 
     // Set control mode to torque control
     odrives[index].drive.setControllerMode(ODriveControlMode::CONTROL_MODE_TORQUE_CONTROL, 

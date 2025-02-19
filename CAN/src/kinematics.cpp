@@ -10,7 +10,7 @@ namespace NP1_Kin
     {
         static float tendon[3];
         tendon[0] = A_dagger[0] * tor0 + A_dagger[1] * tor1; // tendon one motor 0
-        tendon[1] = A_dagger[2] * tor0 + A_dagger[3] * tor1;// tendon one motor 1
+        tendon[1] = A_dagger[2] * tor0 + A_dagger[3] * tor1; // tendon one motor 1
         tendon[2] = A_dagger[4] * tor0 + A_dagger[5] * tor1; // tendon one motor 2
 
         return tendon;

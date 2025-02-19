@@ -108,9 +108,16 @@ void processSerialCommand() {
                     odrives[driveNum].is_running = true;
                     odrives[driveNum].drive.setTorque(torque);
 
+                    Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback;
+
                     Serial.print("Starting ODrive ");
                     Serial.print(driveNum);
-                    Serial.println(clockwise ? " CW" : " CCW");
+                    Serial.print(clockwise ? " going CW " : " CCW ");
+                    Serial.print(" - Position: ");
+                    Serial.print(feedback.Pos_Estimate);
+                    Serial.print(", Velocity: ");
+                    Serial.println(feedback.Vel_Estimate);
+                    
                 }
             }
         }

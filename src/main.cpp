@@ -19,6 +19,9 @@ struct ODriveControl {
 // Constants
 const float CONSTANT_TORQUE = 0.0036f;
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
+const float TENSION_POS_THRES = 0.01f;
+
+bool tensioned = false;
 
 // CAN setup implementation
 bool setupCan() {
@@ -48,6 +51,64 @@ void onCanMessage(const CAN_message_t& msg) {
     for (int i = 0; i < NUM_DRIVES; i++) {
         onReceive(msg, odrives[i].drive);
     }
+}
+
+bool autoTensioning()
+{
+    bool tensioned[NUM_DRIVES] = {false, false, false};
+    float last_positions[NUM_DRIVES];
+    
+    // Initialize last positions
+    for (int i = 0; i < NUM_DRIVES; i++) {
+        last_positions[i] = odrives[i].user_data.last_feedback.Pos_Estimate;
+        // Start applying constant torque to all motors
+        odrives[i].drive.setTorque(CONSTANT_TORQUE);
+        odrives[i].is_running = true;
+        odrives[i].current_torque = CONSTANT_TORQUE;
+    }
+    
+    // Continue until all motors are tensioned
+    while (!(tensioned[0] && tensioned[1] && tensioned[2])) {
+        // Pump CAN events to receive feedback
+        pumpEvents(can_intf);
+        
+        // Check each motor
+        for (int i = 0; i < NUM_DRIVES; i++) {
+            if (!tensioned[i] && odrives[i].user_data.received_feedback) {
+                float current_pos = odrives[i].user_data.last_feedback.Pos_Estimate;
+                float position_change = abs(current_pos - last_positions[i]);
+                
+                // Check if position change is below threshold
+                if (position_change < TENSION_POS_THRES) {
+                    tensioned[i] = true;
+                    odrives[i].drive.setTorque(0); // Stop the motor
+                    odrives[i].is_running = false;
+                    odrives[i].current_torque = 0;
+                    
+                    Serial.print("Motor ");
+                    Serial.print(i);
+                    Serial.println(" tensioned");
+                }
+                
+                last_positions[i] = current_pos;
+            }
+            
+            // Handle any errors during tensioning
+            if (odrives[i].user_data.received_heartbeat) {
+                Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
+                if (heartbeat.Axis_Error != 0) {
+                    if (odrives[i].drive.clearErrors()) {
+                        odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
+                    }
+                }
+            }
+        }
+        
+        delay(10); // Small delay to prevent overwhelming the system
+    }
+    
+    Serial.println("All motors tensioned successfully");
+    return true;
 }
 
 void setupODrive(int index) {
@@ -150,7 +211,10 @@ void setup() {
 
 void loop() {
     pumpEvents(can_intf);
-    
+    if (!tensioned)
+    {
+        tensioned = autoTensioning();
+    }
     // Process any incoming serial commands
     processSerialCommand();
     

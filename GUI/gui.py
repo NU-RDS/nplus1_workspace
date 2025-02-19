@@ -15,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 11520, timeout=0.1)
+            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)  # Fixed baudrate to match Arduino
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -23,6 +23,20 @@ class MotorControlGUI:
         # Create main container
         self.main_container = ttk.Frame(root)
         self.main_container.pack(expand=True, fill='both', padx=10, pady=10)
+
+        # Create status frame for tensioning status
+        self.status_frame = ttk.LabelFrame(self.main_container, text="Tensioning Status")
+        self.status_frame.pack(fill='x', pady=(0, 10))
+        
+        # Create status labels for each motor
+        self.motor_status_labels = []
+        status_container = ttk.Frame(self.status_frame)
+        status_container.pack(fill='x', padx=5, pady=5)
+        
+        for i in range(3):
+            label = ttk.Label(status_container, text=f"Motor {i}: Not Tensioned")
+            label.pack(side=tk.LEFT, padx=10)
+            self.motor_status_labels.append(label)
 
         # Create notebook (tabbed interface)
         self.notebook = ttk.Notebook(self.main_container)
@@ -72,7 +86,7 @@ class MotorControlGUI:
     def create_feedback_display(self):
         # Create frame for feedback
         feedback_frame = ttk.LabelFrame(
-            self.main_container, text="Serial Feedback")
+            self.main_container, text="System Feedback")
         feedback_frame.pack(fill='both', expand=True, pady=10)
 
         # Create scrolled text widget
@@ -100,6 +114,22 @@ class MotorControlGUI:
         # Process all available messages
         while not self.message_queue.empty():
             message = self.message_queue.get()
+            
+            # Check for tensioning status messages
+            if "Motor" in message and "tensioned" in message:
+                try:
+                    # Extract motor number from message
+                    motor_num = int(message.split()[1])
+                    self.motor_status_labels[motor_num].configure(
+                        text=f"Motor {motor_num}: Tensioned")
+                except (ValueError, IndexError):
+                    pass
+            elif "All motors tensioned successfully" in message:
+                for label in self.motor_status_labels:
+                    if "Not Tensioned" in label['text']:
+                        label.configure(text=label['text'].replace("Not Tensioned", "Tensioned"))
+            
+            # Add message to feedback display
             self.feedback_text.insert(tk.END, message + '\n')
             self.feedback_text.see(tk.END)  # Auto-scroll to bottom
 
@@ -114,7 +144,6 @@ class MotorControlGUI:
             self.ser.write(message.encode())
 
             # Request current values
-            # New command to request current
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
 
@@ -126,7 +155,6 @@ class MotorControlGUI:
             self.ser.write(message.encode())
 
             # Request current values
-            # New command to request current
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
 
@@ -139,5 +167,5 @@ class MotorControlGUI:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MotorControlGUI(root)
-    root.geometry("400x500")  # Increased window size to accommodate feedback
+    root.geometry("600x600")  # Increased window size to accommodate status display
     root.mainloop()

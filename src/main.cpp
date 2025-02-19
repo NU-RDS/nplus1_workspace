@@ -108,9 +108,18 @@ void processSerialCommand() {
                     odrives[driveNum].is_running = true;
                     odrives[driveNum].drive.setTorque(torque);
 
+                    Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback;
+
                     Serial.print("Starting ODrive ");
                     Serial.print(driveNum);
-                    Serial.println(clockwise ? " CW" : " CCW");
+                    Serial.print(clockwise ? " CW " : " CCW" );
+                    
+                    Serial.print("ODrive ");
+                    Serial.print(driveNum);
+                    Serial.print(" - Position: ");
+                    Serial.print(feedback.Pos_Estimate);
+                    Serial.print(", Velocity: ");
+                    Serial.println(feedback.Vel_Estimate);
                 }
             }
         }
@@ -163,13 +172,13 @@ void loop() {
             unsigned long current_time = millis();
             
             if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
-                Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-                Serial.print("ODrive ");
-                Serial.print(i);
-                Serial.print(" - Position: ");
-                Serial.print(feedback.Pos_Estimate);
-                Serial.print(", Velocity: ");
-                Serial.println(feedback.Vel_Estimate);
+                // Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+                // Serial.print("ODrive ");
+                // Serial.print(i);
+                // Serial.print(" - Position: ");
+                // Serial.print(feedback.Pos_Estimate);
+                // Serial.print(", Velocity: ");
+                // Serial.println(feedback.Vel_Estimate);
                 last_feedback_time = current_time;
             }
         }

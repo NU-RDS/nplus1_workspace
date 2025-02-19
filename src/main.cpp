@@ -21,8 +21,6 @@ const float CONSTANT_TORQUE = 0.0036f;
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
 const float TENSION_POS_THRES = 0.01f;
 
-bool tensioned = false;
-
 // CAN setup implementation
 bool setupCan() {
     can_intf.begin();
@@ -51,83 +49,6 @@ void onCanMessage(const CAN_message_t& msg) {
     for (int i = 0; i < NUM_DRIVES; i++) {
         onReceive(msg, odrives[i].drive);
     }
-}
-
-bool autoTensioning()
-{
-    bool tensioned[NUM_DRIVES] = {false, false, false};
-    float last_positions[NUM_DRIVES] = {0.0f, 0.0f, 0.0f};
-    int current_motor = 0;  // Track which motor we're currently tensioning
-    
-    // Initial setup for first motor
-    last_positions[current_motor] = odrives[current_motor].user_data.last_feedback.Pos_Estimate;
-    odrives[current_motor].drive.setTorque(CONSTANT_TORQUE);
-    odrives[current_motor].is_running = true;
-    odrives[current_motor].current_torque = CONSTANT_TORQUE;
-    
-    Serial.print("Starting tensioning of Motor ");
-    Serial.println(current_motor);
-    
-    while (!(tensioned[0] && tensioned[1] && tensioned[2])) {
-        // Pump CAN events to receive feedback
-        pumpEvents(can_intf);
-        
-        // Only process the current motor
-        if (!tensioned[current_motor] && odrives[current_motor].user_data.received_feedback) {
-            float current_pos = odrives[current_motor].user_data.last_feedback.Pos_Estimate;
-            float position_change = abs(current_pos - last_positions[current_motor]);
-            
-            // Print progress information
-            Serial.print("Motor ");
-            Serial.print(current_motor);
-            Serial.print(" position change: ");
-            Serial.println(position_change, 6);  // Print with 6 decimal places
-            
-            // Check if position change is below threshold
-            if (position_change < TENSION_POS_THRES) {
-                tensioned[current_motor] = true;
-                odrives[current_motor].drive.setTorque(0); // Stop the motor
-                odrives[current_motor].is_running = false;
-                odrives[current_motor].current_torque = 0;
-                
-                Serial.print("Motor ");
-                Serial.print(current_motor);
-                Serial.println(" tensioned");
-                
-                // Move to next motor if there is one
-                current_motor++;
-                if (current_motor < NUM_DRIVES) {
-                    Serial.print("Starting tensioning of Motor ");
-                    Serial.println(current_motor);
-                    
-                    // Initialize next motor
-                    last_positions[current_motor] = odrives[current_motor].user_data.last_feedback.Pos_Estimate;
-                    odrives[current_motor].drive.setTorque(CONSTANT_TORQUE);
-                    odrives[current_motor].is_running = true;
-                    odrives[current_motor].current_torque = CONSTANT_TORQUE;
-                }
-            }
-            
-            last_positions[current_motor] = current_pos;
-        }
-        
-        // Handle any errors during tensioning for the current motor
-        if (odrives[current_motor].user_data.received_heartbeat) {
-            Heartbeat_msg_t heartbeat = odrives[current_motor].user_data.last_heartbeat;
-            if (heartbeat.Axis_Error != 0) {
-                Serial.print("Error detected on Motor ");
-                Serial.println(current_motor);
-                if (odrives[current_motor].drive.clearErrors()) {
-                    odrives[current_motor].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-                }
-            }
-        }
-        
-        delay(10); // Small delay to prevent overwhelming the system
-    }
-    
-    Serial.println("All motors tensioned successfully");
-    return true;
 }
 
 void setupODrive(int index) {
@@ -230,11 +151,6 @@ void setup() {
 
 void loop() {
     pumpEvents(can_intf);
-
-    if (!tensioned)
-    {
-        tensioned = autoTensioning();
-    }
     
     // Process any incoming serial commands
     processSerialCommand();

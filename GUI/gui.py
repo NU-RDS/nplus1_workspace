@@ -15,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+            self.ser = serial.Serial('/dev/ttyACM0', 11520, timeout=0.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -23,30 +23,6 @@ class MotorControlGUI:
         # Create main container
         self.main_container = ttk.Frame(root)
         self.main_container.pack(expand=True, fill='both', padx=10, pady=10)
-
-        # Create status frame for tensioning status
-        self.status_frame = ttk.LabelFrame(self.main_container, text="Tensioning Status")
-        self.status_frame.pack(fill='x', pady=(0, 10))
-        
-        # Create status widgets for each motor
-        self.motor_frames = []
-        for i in range(3):
-            frame = ttk.Frame(self.status_frame)
-            frame.pack(fill='x', padx=5, pady=2)
-            
-            # Status label
-            status_label = ttk.Label(frame, text=f"Motor {i}: Not Started")
-            status_label.pack(side=tk.LEFT, padx=5)
-            
-            # Progress label
-            progress_label = ttk.Label(frame, text="Position change: ---")
-            progress_label.pack(side=tk.RIGHT, padx=5)
-            
-            self.motor_frames.append({
-                'frame': frame,
-                'status': status_label,
-                'progress': progress_label
-            })
 
         # Create notebook (tabbed interface)
         self.notebook = ttk.Notebook(self.main_container)
@@ -96,7 +72,7 @@ class MotorControlGUI:
     def create_feedback_display(self):
         # Create frame for feedback
         feedback_frame = ttk.LabelFrame(
-            self.main_container, text="System Feedback")
+            self.main_container, text="Serial Feedback")
         feedback_frame.pack(fill='both', expand=True, pady=10)
 
         # Create scrolled text widget
@@ -107,65 +83,50 @@ class MotorControlGUI:
         )
         self.feedback_text.pack(fill='both', expand=True, padx=5, pady=5)
 
-    def update_motor_status(self, motor_num, message, position_change=None):
-        if 0 <= motor_num < 3:
-            motor_frame = self.motor_frames[motor_num]
-            motor_frame['status'].configure(text=f"Motor {motor_num}: {message}")
-            if position_change is not None:
-                motor_frame['progress'].configure(
-                    text=f"Position change: {position_change:.6f}")
+    def read_serial(self):
+        while self.running and self.ser:
+            try:
+                if self.ser.in_waiting:
+                    line = self.ser.readline().decode('utf-8').strip()
+                    if line:
+                        self.message_queue.put(line)
+            except serial.SerialException as e:
+                self.message_queue.put(f"Serial error: {str(e)}")
+                break
+            except UnicodeDecodeError:
+                pass
 
     def update_feedback(self):
         # Process all available messages
         while not self.message_queue.empty():
             message = self.message_queue.get()
-            
-            # Handle different types of messages
-            if "Starting tensioning of Motor" in message:
-                motor_num = int(message.split("Motor ")[-1])
-                self.update_motor_status(motor_num, "Tensioning...")
-            
-            elif "position change:" in message:
-                try:
-                    parts = message.split()
-                    motor_num = int(parts[1])
-                    position_change = float(parts[-1])
-                    self.update_motor_status(motor_num, "Tensioning...", position_change)
-                except (ValueError, IndexError):
-                    pass
-            
-            elif "Motor" in message and "tensioned" in message:
-                try:
-                    motor_num = int(message.split()[1])
-                    self.update_motor_status(motor_num, "Tensioned")
-                except (ValueError, IndexError):
-                    pass
-            
-            elif "Error detected on Motor" in message:
-                try:
-                    motor_num = int(message.split("Motor ")[-1])
-                    self.update_motor_status(motor_num, "Error Detected!")
-                except (ValueError, IndexError):
-                    pass
-            
-            # Add all messages to feedback display
             self.feedback_text.insert(tk.END, message + '\n')
-            self.feedback_text.see(tk.END)
+            self.feedback_text.see(tk.END)  # Auto-scroll to bottom
 
         # Schedule the next update
         self.root.after(100, self.update_feedback)
 
     def rotate_cw(self, drive_num):
+        print(f"Rotating ODrive {drive_num} clockwise")
         if self.ser:
+            # Send rotation command
             message = f"{drive_num},true\n"
             self.ser.write(message.encode())
+
+            # Request current values
+            # New command to request current
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
 
     def rotate_ccw(self, drive_num):
+        print(f"Rotating ODrive {drive_num} counter-clockwise")
         if self.ser:
+            # Send rotation command
             message = f"{drive_num},false\n"
             self.ser.write(message.encode())
+
+            # Request current values
+            # New command to request current
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
 
@@ -178,5 +139,5 @@ class MotorControlGUI:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MotorControlGUI(root)
-    root.geometry("600x600")
+    root.geometry("400x500")  # Increased window size to accommodate feedback
     root.mainloop()

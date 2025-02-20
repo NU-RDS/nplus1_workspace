@@ -102,6 +102,8 @@ void processSerialCommand() {
                 }
                 else if (cmd == "true" || cmd == "false") {
                     // Your existing rotation logic
+                    Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback;
+
                     bool clockwise = cmd.equals("true");
                     float torque = clockwise ? CONSTANT_TORQUE : -CONSTANT_TORQUE;
                     odrives[driveNum].current_torque = torque;
@@ -110,7 +112,12 @@ void processSerialCommand() {
 
                     Serial.print("Starting ODrive ");
                     Serial.print(driveNum);
-                    Serial.println(clockwise ? " CW" : " CCW");
+                    Serial.print(clockwise ? " CW"  : " CCW ");
+
+                    Serial.print(" - Position: ");
+                    Serial.print(feedback.Pos_Estimate);
+                    Serial.print(", Velocity: ");
+                    Serial.println(feedback.Vel_Estimate);
                 }
             }
         }
@@ -163,13 +170,7 @@ void loop() {
             unsigned long current_time = millis();
             
             if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
-                Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-                Serial.print("ODrive ");
-                Serial.print(i);
-                Serial.print(" - Position: ");
-                Serial.print(feedback.Pos_Estimate);
-                Serial.print(", Velocity: ");
-                Serial.println(feedback.Vel_Estimate);
+                
                 last_feedback_time = current_time;
             }
         }

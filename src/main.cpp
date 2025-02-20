@@ -162,7 +162,6 @@ void processSerialCommand() {
         if (command == "auto_tension") {
             Serial.println("Starting auto-tensioning sequence...");
             autoTensioning();
-            return;
         }
         
         // Parse regular command format: "drive_num,direction"
@@ -200,7 +199,7 @@ void processSerialCommand() {
 
                     Serial.print("Starting ODrive ");
                     Serial.print(driveNum);
-                    Serial.print(clockwise ? " going CW " : " CCW ");
+                    Serial.print(clockwise ? " CW " : " CCW ");
                     Serial.print(" - Position: ");
                     Serial.print(feedback.Pos_Estimate);
                     Serial.print(", Velocity: ");

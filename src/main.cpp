@@ -95,6 +95,7 @@ void processSerialCommand() {
                         Serial.print(current_msg.Iq_Setpoint);
                         Serial.print(", Iq_Measured: ");
                         Serial.print(current_msg.Iq_Measured);
+                        ;
                     } else {
                         Serial.print("ODrive ");
                         Serial.print(driveNum);
@@ -173,7 +174,7 @@ void loop() {
             unsigned long current_time = millis();
             
             if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
-                // Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+                Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
                 // Serial.print("ODrive ");
                 // Serial.print(i);
                 // Serial.print(" - Position: ");

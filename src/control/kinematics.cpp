@@ -1,6 +1,7 @@
-#pragma once
 #include <cmath>
 #include "kinematics.hpp"
+
+using namespace std;
 
 namespace NP1_Kin
 {
@@ -12,7 +13,6 @@ namespace NP1_Kin
         tendon[0] = A_dagger[0] * tor0 + A_dagger[1] * tor1; // tendon one motor 0
         tendon[1] = A_dagger[2] * tor0 + A_dagger[3] * tor1;// tendon one motor 1
         tendon[2] = A_dagger[4] * tor0 + A_dagger[5] * tor1; // tendon one motor 2
-
         return tendon;
     }
 
@@ -36,7 +36,6 @@ namespace NP1_Kin
                 alpha = temp;
             }
         }
-
         // after we calculated alpha
         for (int i = 0; i < 3; i++)
         {
@@ -56,39 +55,38 @@ namespace NP1_Kin
     // joint toruqe to motor torque
     float* torque_j2m(float torque0, float torque1)
     {
-        static float motor_torques[3] = {0};
+        static float motor_torques[3] = {0};  // Keep only this declaration
         float* force_tendon = f_tendon(torque0, torque1);
-
+    
         // check if need offset
         bool positive_force = true;
         for (int i = 0; i < 3; i++)
         {
             positive_force = positive_force && (force_tendon[i] > 0.);
         }
-
+    
         // any tenson force not positive
         if (!positive_force)
         {
             f_offset(force_tendon);
         }
-
+    
         // now all force on tendon should be positive
         // calculate for motor torque 
-        float* motor_torques[3];
         for (int i = 0; i < 3; i++)
         {
            float motor_torque = force_tendon[i] * R;
            if (motor_torque < STALL_TORQUE)
            {
-            motor_torque = STALL_TORQUE;
+               motor_torque = STALL_TORQUE;
            }
            if (motor_torque > MAX_TORQUE)
            {
-            motor_torque = MAX_TORQUE;
+               motor_torque = MAX_TORQUE;
            }
-           motor_torques[i] = motor_torque;
+           motor_torques[i] = motor_torque;  // Store directly in the static array
         }
-
+    
         return motor_torques;
     }
 

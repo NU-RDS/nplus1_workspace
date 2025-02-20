@@ -19,13 +19,13 @@ private:
     double ki;  ///< Integral gain
     double kd;  ///< Derivative gain
     
-    // Error terms
-    double integral_error;  ///< Accumulated integral error
-    double prev_error;     ///< Previous error for derivative calculation
-    
     // Control limits
     double max_torque;  ///< Maximum allowable torque output
     double min_torque;  ///< Minimum allowable torque output
+
+    // Error terms
+    double integral_error;  ///< Accumulated integral error
+    double prev_error;     ///< Previous error for derivative calculation
     
     // Timing
     std::chrono::steady_clock::time_point last_update;

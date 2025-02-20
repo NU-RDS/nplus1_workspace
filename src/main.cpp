@@ -175,12 +175,12 @@ void loop() {
             
             if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
                 Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-                // Serial.print("ODrive ");
-                // Serial.print(i);
-                // Serial.print(" - Position: ");
-                // Serial.print(feedback.Pos_Estimate);
-                // Serial.print(", Velocity: ");
-                // Serial.println(feedback.Vel_Estimate);
+                Serial.print("ODrive ");
+                Serial.print(i);
+                Serial.print(" - Position: ");
+                Serial.print(feedback.Pos_Estimate);
+                Serial.print(", Velocity: ");
+                Serial.println(feedback.Vel_Estimate);
                 last_feedback_time = current_time;
             }
         }

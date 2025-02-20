@@ -17,8 +17,14 @@ struct ODriveControl {
 };
 
 // Constants
-const float CONSTANT_TORQUE = 0.0036f;
+const float CONSTANT_TORQUE = 0.004f;
+const float TENSION_POS_THRES = 0.01f;
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
+
+
+bool tensioned[3] = {false, false, false};
+bool doTension[3] = {false, false, false};
+int tensionID = -1;
 
 // CAN setup implementation
 bool setupCan() {
@@ -112,28 +118,91 @@ void processSerialCommand() {
                     Serial.print(driveNum);
                     Serial.println(clockwise ? " CW" : " CCW");
                 }
-                else if (cmd == "imp"){
-                    // Zero-impedance mode. Robot should yield easily to external forces, then stay wherever you left it.
-                    float torque = 0.001f;
-
-                    for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
-                        // CONSTANT_TORQUE = 0.0036f
-                        odrives[driveNum].current_torque = torque;
-                        odrives[driveNum].is_running = true;
-                        odrives[driveNum].drive.setTorque(torque);
-                
-                        Serial.print("Setting ");
-                        Serial.print(driveNum);
-                        Serial.println(" to impedance mode.");
+                else if (cmd == "ten") 
+                {
+                    doTension[driveNum] = true;
+                    tensionID = driveNum;
+                    if (tensioned[driveNum])
+                    {
+                        Serial.print("Motor ");
+                        Serial.print(tensionID);
+                        Serial.println(" is already tensioned");
                     }
-
-                    // odrives[driveNum].current_torque = 0.0f;
-                    // odrives[driveNum].is_running = true;
-                    // odrives[driveNum].drive.setTorque(0.0f);
-                    // Serial.print("Setting ");
-                    // Serial.print(driveNum);
-                    // Serial.println(" to impedance mode.");
+                    else
+                    {
+                        Serial.print("Will tension ");
+                        Serial.println(tensionID);
+                    }
                 }
+                //     if (tensioned[driveNum]) {
+                //         Serial.print("ODrive ");
+                //         Serial.print(driveNum);
+                //         Serial.println(" is already tensioned. Ignoring command.");
+                //         return;
+                //     }
+                    
+                //     // Initialize position tracking
+                //     float prev_pos = odrives[driveNum].user_data.last_feedback.Pos_Estimate;
+                //     unsigned long last_movement_time = millis();
+                //     const unsigned long STALL_TIMEOUT = 500; // Time in ms to detect a stall
+                //     const float MIN_MOVEMENT = 0.001f; // Minimum movement to consider not stalled
+                    
+                //     Serial.print("Starting tension control for drive ");
+                //     Serial.print(driveNum);
+                //     Serial.println(" - Applying constant torque until hardstop detected");
+                
+                //     // Start by applying constant torque
+                //     odrives[driveNum].current_torque = CONSTANT_TORQUE;
+                //     odrives[driveNum].is_running = true;
+                //     odrives[driveNum].drive.setTorque(CONSTANT_TORQUE);
+                
+                //     while (!tensioned[driveNum]) {
+                //         // // Process CAN messages to get new feedback
+                //         // pumpEvents(can_intf);
+                //                                 // Get current encoder position from feedback
+                //         Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback;
+                //         float pos_diff = abs(feedback.Pos_Estimate - prev_pos);
+                        
+                //         Serial.print("Position: ");
+                //         Serial.print(feedback.Pos_Estimate);
+                //         Serial.print(" Diff: ");
+                //         Serial.print(pos_diff);
+                        
+                //         // Check if we've moved since last check
+                //         if (pos_diff > MIN_MOVEMENT) {
+                //             // Movement detected, update timestamp
+                //             last_movement_time = millis();
+                //         } else {
+                //             // Check if we've been stalled for longer than timeout
+                //             if (millis() - last_movement_time > STALL_TIMEOUT) {
+                //                 Serial.println("Hardstop detected! Motor stops.");
+                                
+                //                 // Maintain holding torque at hardstop
+                //                 odrives[driveNum].current_torque = 0.0f;
+                //                 odrives[driveNum].is_running = true;
+                //                 odrives[driveNum].drive.setTorque(0.0f);
+                                
+                //                 tensioned[driveNum] = true;
+                //                 break;
+                //             }
+                //         }
+                        
+                //         // Update previous position for next iteration
+                //         prev_pos = feedback.Pos_Estimate;
+                        
+                //         // Small delay to allow for CAN message processing
+                //         delay(10);
+                        
+                //         // Check for any errors during operation
+                //         Heartbeat_msg_t heartbeat = odrives[driveNum].user_data.last_heartbeat;
+                //         if (heartbeat.Axis_Error != 0) {
+                //             Serial.println("Error detected during tensioning!");
+                //             odrives[driveNum].drive.clearErrors();
+                //             odrives[driveNum].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
+                //         }
+                //     }
+                // }
+            
             }
         }
     }
@@ -143,7 +212,7 @@ void setup() {
     Serial.begin(115200);
     while (!Serial) delay(100);
     
-    Serial.println("Starting ODrive GUI Control Demo");
+    Serial.println("Starting ODrive GUI Tensioning Demo");
 
     // Initialize CAN
     if (!setupCan()) {
@@ -168,15 +237,7 @@ void setup() {
 
 void loop() {
     pumpEvents(can_intf);
-
     for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
-        // Set torque command
-        // CONSTANT_TORQUE = 0.0036f
-        float torque = 0.001f;
-        odrives[driveNum].current_torque = torque;
-        odrives[driveNum].is_running = true;
-        odrives[driveNum].drive.setTorque(torque);
-
         // Check for errors and print them out
         Heartbeat_msg_t heartbeat = odrives[driveNum].user_data.last_heartbeat;
         if (heartbeat.Axis_Error != 0){
@@ -194,16 +255,106 @@ void loop() {
         }
         delay(1);
     }
-    
-    // // Process any incoming serial commands
-    // processSerialCommand();
-    
+
+    processSerialCommand();
+
+    // doTension[0] = false;
+    // // Auto tensioning
+    // for (int i = 0; i < NUM_DRIVES; i++) 
+    // {
+    //     Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+    //     float prev_pos = feedback.Pos_Estimate;
+    //     while (doTension[i] && (!tensioned[i])) // if cmd asks to do tension and if the motor is not yet tensioned
+    //     {
+    //         pumpEvents(can_intf);
+            
+            // Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+            // float pos_diff = abs(feedback.Pos_Estimate - prev_pos);
+
+            // Serial.print("ODrive ");
+            // Serial.print(i);
+            // Serial.print(" - Position: ");
+            // Serial.print(feedback.Pos_Estimate);
+            // Serial.print(" , Prev: ");
+            // Serial.print(prev_pos);
+            // Serial.print(", Diff: ");
+            // Serial.println(pos_diff);
+
+    //         prev_pos = feedback.Pos_Estimate;
+    //         delay(10);
+    //         Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
+    //         if (heartbeat.Axis_Error != 0) {
+    //             Serial.println("Error detected during tensioning!");
+    //             odrives[i].drive.clearErrors();
+    //             odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
+    //         }
+    //     }
+    // }
     // // Handle all ODrives
+    // int tensionID = 0;
+    // doTension[0] = true;
+    if (tensionID != -1)
+    {
+        Get_Encoder_Estimates_msg_t feedback = odrives[tensionID].user_data.last_feedback;
+        float prev_pos = feedback.Pos_Estimate;
+        unsigned long last_measurement_time = millis();  
+        if (doTension[tensionID] && (!tensioned[tensionID]))
+        {
+            odrives[tensionID].current_torque = CONSTANT_TORQUE;
+            odrives[tensionID].is_running = true;
+            odrives[tensionID].drive.setTorque(CONSTANT_TORQUE);
+        }
+        else
+        {
+            Serial.print("Tendon ");
+            Serial.print(tensionID);
+            Serial.println(" is tensioned. ");
+
+        }
+        while (doTension[tensionID] && (!tensioned[tensionID]))
+        {
+            pumpEvents(can_intf);
+            unsigned long current_time = millis();
+            if (current_time - last_measurement_time >= 100)  // 100ms between measurements
+            {
+                odrives[tensionID].is_running = true;
+                Get_Encoder_Estimates_msg_t feedback = odrives[tensionID].user_data.last_feedback;
+                float pos_diff = abs(prev_pos - feedback.Pos_Estimate);
+                Serial.print("ODrive ");
+                Serial.print(tensionID);
+                Serial.print(" - Position: ");
+                Serial.print(feedback.Pos_Estimate);
+                Serial.print(", Diff: ");
+                Serial.println(pos_diff);
+                Serial.println("------------------------------");
+
+                
+
+                if (pos_diff < TENSION_POS_THRES) 
+                {
+                    Serial.println("DONE");
+                    odrives[tensionID].current_torque = 0.0f;
+                    odrives[tensionID].is_running = true;
+                    odrives[tensionID].drive.setTorque(0.0f);
+                    tensioned[tensionID] = true;
+                    break;
+                }
+                odrives[tensionID].current_torque = CONSTANT_TORQUE;
+                odrives[tensionID].is_running = true;
+                odrives[tensionID].drive.setTorque(CONSTANT_TORQUE);
+
+                prev_pos = feedback.Pos_Estimate;
+                last_measurement_time = current_time;
+            }
+        }
+    }
+
     // for (int i = 0; i < NUM_DRIVES; i++) {
     //     // Handle any errors
     //     if (odrives[i].user_data.received_heartbeat) {
     //         Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
     //         if (heartbeat.Axis_Error != 0) {
+    //             Serial.println("error");
     //             if (odrives[i].drive.clearErrors()) {
     //                 odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
     //             }
@@ -211,20 +362,18 @@ void loop() {
     //     }
         
     //     // Print feedback if motor is running
-    //     if (odrives[i].is_running && odrives[i].user_data.received_feedback) {
-    //         static unsigned long last_feedback_time = 0;
+    //     odrives[tensionID].is_running = true;
+
+    //     if (odrives[tensionID].is_running && odrives[tensionID].user_data.received_feedback) {
     //         unsigned long current_time = millis();
-            
-    //         if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
-    //             Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-    //             Serial.print("ODrive ");
-    //             Serial.print(i);
-    //             Serial.print(" - Position: ");
-    //             Serial.print(feedback.Pos_Estimate);
-    //             Serial.print(", Velocity: ");
-    //             Serial.println(feedback.Vel_Estimate);
-    //             last_feedback_time = current_time;
-    //         }
+    //         Serial.println("waiting for print");
+    //         Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+    //         Serial.print("ODrive ");
+    //         Serial.print(tensionID);
+    //         Serial.print(" - Position: ");
+    //         Serial.print(feedback.Pos_Estimate);
+    //         Serial.print(", Velocity: ");
+    //         Serial.println(feedback.Vel_Estimate);
     //     }
     // }
 

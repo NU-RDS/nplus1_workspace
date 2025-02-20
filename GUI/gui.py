@@ -72,8 +72,8 @@ class MotorControlGUI:
         # Create Zero-Impedance button
         zero_imp_button = ttk.Button(
             button_frame,
-            text="Zero-Impedance",
-            command=lambda: self.set_zero_impedance(drive_num)
+            text="auto-tensioning",
+            command=lambda: self.autotensioning(drive_num)
         )
         zero_imp_button.pack(side=tk.LEFT, padx=10)
 
@@ -139,17 +139,13 @@ class MotorControlGUI:
             self.ser.write(message.encode())
 
     # Command for setting an ODrive to zero-impedance mode
-    def set_zero_impedance(self, drive_num):
-        print(f"Setting ODrive {drive_num} to Zero-Impedance mode")
+    def autotensioning(self, drive_num):
+        print(f"Setting ODrive {drive_num} to auto-tensioning mode")
         if self.ser:
             # Send rotation command
-            message = f"{drive_num},imp,0.01\n"
+            message = f"{drive_num},ten\n"
             self.ser.write(message.encode())
 
-            # Request current values
-            # New command to request current
-            message = f"{drive_num},get_current\n"
-            self.ser.write(message.encode())
 
     def __del__(self):
         self.running = False

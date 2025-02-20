@@ -4,6 +4,7 @@ import serial
 import threading
 import queue
 
+
 class MotorControlGUI:
     def __init__(self, root):
         self.root = root
@@ -14,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -32,23 +33,24 @@ class MotorControlGUI:
         self.tension_button.pack(pady=(0, 10))
 
         # Create status frame for tensioning status
-        self.status_frame = ttk.LabelFrame(self.main_container, text="Tensioning Status")
+        self.status_frame = ttk.LabelFrame(
+            self.main_container, text="Tensioning Status")
         self.status_frame.pack(fill='x', pady=(0, 10))
-        
+
         # Create status widgets for each motor
         self.motor_frames = []
         for i in range(3):
             frame = ttk.Frame(self.status_frame)
             frame.pack(fill='x', padx=5, pady=2)
-            
+
             # Status label
             status_label = ttk.Label(frame, text=f"Motor {i}: Not Started")
             status_label.pack(side=tk.LEFT, padx=5)
-            
+
             # Progress label
             progress_label = ttk.Label(frame, text="Position change: ---")
             progress_label.pack(side=tk.RIGHT, padx=5)
-            
+
             self.motor_frames.append({
                 'frame': frame,
                 'status': status_label,
@@ -129,14 +131,14 @@ class MotorControlGUI:
         if self.ser:
             # Disable the tension button during the process
             self.tension_button.configure(state='disabled')
-            
+
             # Clear previous status
             for i in range(3):
                 self.update_motor_status(i, "Waiting...", None)
-            
+
             # Send auto-tension command
             self.ser.write("auto_tension\n".encode())
-            
+
             # Add initial message to feedback
             self.message_queue.put("Starting auto-tensioning sequence...")
 
@@ -167,7 +169,8 @@ class MotorControlGUI:
         """Update the status display for a specific motor"""
         if 0 <= motor_num < 3:
             motor_frame = self.motor_frames[motor_num]
-            motor_frame['status'].configure(text=f"Motor {motor_num}: {message}")
+            motor_frame['status'].configure(
+                text=f"Motor {motor_num}: {message}")
             if position_change is not None:
                 motor_frame['progress'].configure(
                     text=f"Position change: {position_change:.6f}")
@@ -188,39 +191,40 @@ class MotorControlGUI:
         """Process messages from the serial queue and update the UI"""
         while not self.message_queue.empty():
             message = self.message_queue.get()
-            
+
             # Handle different types of messages
             if "Starting tensioning of Motor" in message:
                 motor_num = int(message.split("Motor ")[-1])
                 self.update_motor_status(motor_num, "Tensioning...")
-            
+
             elif "position change:" in message:
                 try:
                     parts = message.split()
                     motor_num = int(parts[1])
                     position_change = float(parts[-1])
-                    self.update_motor_status(motor_num, "Tensioning...", position_change)
+                    self.update_motor_status(
+                        motor_num, "Tensioning...", position_change)
                 except (ValueError, IndexError):
                     pass
-            
+
             elif "Motor" in message and "tensioned" in message:
                 try:
                     motor_num = int(message.split()[1])
                     self.update_motor_status(motor_num, "Tensioned")
                 except (ValueError, IndexError):
                     pass
-            
+
             elif "Error detected on Motor" in message:
                 try:
                     motor_num = int(message.split("Motor ")[-1])
                     self.update_motor_status(motor_num, "Error Detected!")
                 except (ValueError, IndexError):
                     pass
-            
+
             elif "All motors tensioned successfully" in message:
                 # Re-enable the tension button
                 self.tension_button.configure(state='normal')
-            
+
             # Add all messages to feedback display
             self.feedback_text.insert(tk.END, message + '\n')
             self.feedback_text.see(tk.END)
@@ -233,6 +237,7 @@ class MotorControlGUI:
         self.running = False
         if hasattr(self, 'ser') and self.ser:
             self.ser.close()
+
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -112,6 +112,28 @@ void processSerialCommand() {
                     Serial.print(driveNum);
                     Serial.println(clockwise ? " CW" : " CCW");
                 }
+                else if (cmd == "imp"){
+                    // Zero-impedance mode. Robot should yield easily to external forces, then stay wherever you left it.
+                    float torque = 0.001f;
+
+                    for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+                        // CONSTANT_TORQUE = 0.0036f
+                        odrives[driveNum].current_torque = torque;
+                        odrives[driveNum].is_running = true;
+                        odrives[driveNum].drive.setTorque(torque);
+                
+                        Serial.print("Setting ");
+                        Serial.print(driveNum);
+                        Serial.println(" to impedance mode.");
+                    }
+
+                    // odrives[driveNum].current_torque = 0.0f;
+                    // odrives[driveNum].is_running = true;
+                    // odrives[driveNum].drive.setTorque(0.0f);
+                    // Serial.print("Setting ");
+                    // Serial.print(driveNum);
+                    // Serial.println(" to impedance mode.");
+                }
             }
         }
     }
@@ -136,44 +158,75 @@ void setup() {
         setupODrive(i);
     }
 
+    // Setting velocity and current limits
+    // odrives[0].drive.setLimits(500, 40);
+    // odrives[1].drive.setLimits(500, 40);
+    // odrives[2].drive.setLimits(500, 40);
+
     Serial.println("All ODrives ready!");
 }
 
 void loop() {
     pumpEvents(can_intf);
-    
-    // Process any incoming serial commands
-    processSerialCommand();
-    
-    // Handle all ODrives
-    for (int i = 0; i < NUM_DRIVES; i++) {
-        // Handle any errors
-        if (odrives[i].user_data.received_heartbeat) {
-            Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
-            if (heartbeat.Axis_Error != 0) {
-                if (odrives[i].drive.clearErrors()) {
-                    odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-                }
+
+    for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+        // Set torque command
+        // CONSTANT_TORQUE = 0.0036f
+        float torque = 0.001f;
+        odrives[driveNum].current_torque = torque;
+        odrives[driveNum].is_running = true;
+        odrives[driveNum].drive.setTorque(torque);
+
+        // Check for errors and print them out
+        Heartbeat_msg_t heartbeat = odrives[driveNum].user_data.last_heartbeat;
+        if (heartbeat.Axis_Error != 0){
+            Get_Error_msg_t msg;
+            uint16_t timeout_ms = 50000;
+            if (odrives[driveNum].drive.getError(msg, timeout_ms)) {
+                Serial.print("Error: ");
+                Serial.print(msg.Disarm_Reason);
+                Serial.print(" ");
+                Serial.println(msg.Active_Errors);
+                odrives[driveNum].drive.clearErrors();
+                // Serial.println(odrives[driveNum].Axis.motor.alpha_beta_frame_controller.I_bus);
+                odrives[driveNum].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
             }
         }
-        
-        // Print feedback if motor is running
-        if (odrives[i].is_running && odrives[i].user_data.received_feedback) {
-            static unsigned long last_feedback_time = 0;
-            unsigned long current_time = millis();
-            
-            if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
-                Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-                Serial.print("ODrive ");
-                Serial.print(i);
-                Serial.print(" - Position: ");
-                Serial.print(feedback.Pos_Estimate);
-                Serial.print(", Velocity: ");
-                Serial.println(feedback.Vel_Estimate);
-                last_feedback_time = current_time;
-            }
-        }
+        delay(1);
     }
+    
+    // // Process any incoming serial commands
+    // processSerialCommand();
+    
+    // // Handle all ODrives
+    // for (int i = 0; i < NUM_DRIVES; i++) {
+    //     // Handle any errors
+    //     if (odrives[i].user_data.received_heartbeat) {
+    //         Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
+    //         if (heartbeat.Axis_Error != 0) {
+    //             if (odrives[i].drive.clearErrors()) {
+    //                 odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
+    //             }
+    //         }
+    //     }
+        
+    //     // Print feedback if motor is running
+    //     if (odrives[i].is_running && odrives[i].user_data.received_feedback) {
+    //         static unsigned long last_feedback_time = 0;
+    //         unsigned long current_time = millis();
+            
+    //         if (current_time - last_feedback_time >= FEEDBACK_DELAY) {
+    //             Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
+    //             Serial.print("ODrive ");
+    //             Serial.print(i);
+    //             Serial.print(" - Position: ");
+    //             Serial.print(feedback.Pos_Estimate);
+    //             Serial.print(", Velocity: ");
+    //             Serial.println(feedback.Vel_Estimate);
+    //             last_feedback_time = current_time;
+    //         }
+    //     }
+    // }
 
     delay(1);  // Small delay to prevent overwhelming the system
 }

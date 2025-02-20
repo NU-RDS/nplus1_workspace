@@ -15,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 11520, timeout=0.1)
+            self.ser = serial.Serial('/dev/tty.usbmodem166396801', 11520, timeout=0.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -68,6 +68,14 @@ class MotorControlGUI:
             command=lambda: self.rotate_ccw(drive_num)
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
+
+        # Create Zero-Impedance button
+        zero_imp_button = ttk.Button(
+            button_frame,
+            text="Zero-Impedance",
+            command=lambda: self.set_zero_impedance(drive_num)
+        )
+        zero_imp_button.pack(side=tk.LEFT, padx=10)
 
     def create_feedback_display(self):
         # Create frame for feedback
@@ -123,6 +131,19 @@ class MotorControlGUI:
         if self.ser:
             # Send rotation command
             message = f"{drive_num},false\n"
+            self.ser.write(message.encode())
+
+            # Request current values
+            # New command to request current
+            message = f"{drive_num},get_current\n"
+            self.ser.write(message.encode())
+
+    # Command for setting an ODrive to zero-impedance mode
+    def set_zero_impedance(self, drive_num):
+        print(f"Setting ODrive {drive_num} to Zero-Impedance mode")
+        if self.ser:
+            # Send rotation command
+            message = f"{drive_num},imp,0.01\n"
             self.ser.write(message.encode())
 
             # Request current values

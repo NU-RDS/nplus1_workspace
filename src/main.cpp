@@ -222,30 +222,30 @@ void loop() {
                     Serial.println(" is tensioned. ");
                     if (tensionID > 0)
                     {
-                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
                         odrives[tensionID].is_running = true;
-                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
                     }
                     else
                     {
-                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.012f;
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.015f;
                         odrives[tensionID].is_running = true;
-                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.012f);
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.015f);
                     }
                     tensioned[tensionID] = true;
                     break;
                 }
                 if (tensionID == 0)
                 {
-                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.012f;
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.015f;
                     odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.012f);
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.015f);
                 }
                 else
                 {
-                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
                     odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
                 }
                 
 

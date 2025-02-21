@@ -183,7 +183,8 @@ void loop() {
     }
 
     processSerialCommand();
-   
+    
+    // Tensioning
     if (tensionID != -1)
     {
         Get_Encoder_Estimates_msg_t feedback = odrives[tensionID].user_data.last_feedback;
@@ -255,33 +256,9 @@ void loop() {
         }
     }
 
-    // for (int i = 0; i < NUM_DRIVES; i++) {
-    //     // Handle any errors
-    //     if (odrives[i].user_data.received_heartbeat) {
-    //         Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
-    //         if (heartbeat.Axis_Error != 0) {
-    //             Serial.println("error");
-    //             if (odrives[i].drive.clearErrors()) {
-    //                 odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-    //             }
-    //         }
-    //     }
-        
-    //     // Print feedback if motor is running
-    //     odrives[tensionID].is_running = true;
-
-    //     if (odrives[tensionID].is_running && odrives[tensionID].user_data.received_feedback) {
-    //         unsigned long current_time = millis();
-    //         Serial.println("waiting for print");
-    //         Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-    //         Serial.print("ODrive ");
-    //         Serial.print(tensionID);
-    //         Serial.print(" - Position: ");
-    //         Serial.print(feedback.Pos_Estimate);
-    //         Serial.print(", Velocity: ");
-    //         Serial.println(feedback.Vel_Estimate);
-    //     }
-    // }
+    // PID
+    float joint0 = ;
+    float joint1 = ;
 
     delay(1);  // Small delay to prevent overwhelming the system
 }

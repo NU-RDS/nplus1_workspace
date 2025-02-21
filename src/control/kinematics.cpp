@@ -135,4 +135,10 @@ namespace NP1_Kin
     {
         return encoder * 360.0f;
     }
+
+    // motor angle to shaft angle
+    float toShaft(float ang)
+    {
+        return ang / GEAR_RATIO;
+    }
 }

@@ -10,7 +10,7 @@ namespace NP1_Kin
     constexpr float STALL_TORQUE = .0036;
     constexpr float MAX_TORQUE = .04;
     constexpr float jacobian_ang[6] = {-0.33333f, -0.33333f, 0.33333f, -0.5f, 0.5f, 0.0f}; // 2x3
-
+    constexpr float GEAR_RATIO = 22.6;
     // constexpr float jacobian_tor[6] = {0};
     constexpr float A_dagger[6] = {-37.037037, -55.555555, -37.037037, 55.555555, 37.037037, 0.};
 
@@ -33,4 +33,7 @@ namespace NP1_Kin
 
     // revolutions to degrees
     float RevToDeg(float encoder);
+
+    // motor angle to shaft angle
+    float toShaft(float ang);
 }

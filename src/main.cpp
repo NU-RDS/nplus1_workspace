@@ -305,7 +305,8 @@ void loop() {
         for (int i = 0; i < NUM_DRIVES; i++)
         {
             Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
-            motor_ang[i] = NP1_Kin::RevToDeg(encoder.Pos_Estimate - init_pos[i]);
+            // motor ang is motor shaft ang
+            motor_ang[i] = NP1_Kin::toShaft((NP1_Kin::RevToDeg(encoder.Pos_Estimate - init_pos[i])));
             Serial.print("Motor ");
             Serial.print(i);
             Serial.print(" is at ");

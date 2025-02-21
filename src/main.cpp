@@ -1,4 +1,6 @@
 #include "odrive_can.hpp"
+#include "kinematics.hpp"
+#include "pvPID.hpp"
 
 // Global variables
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
@@ -26,6 +28,23 @@ bool tensioned[3] = {false, false, false};
 bool doTension[3] = {false, false, false};
 float tension_dir[3] = {-1., -1., 1.};
 int tensionID = -1;
+
+
+// init for PID
+bool got_init = false;
+float init_pos[3] = {0.f};
+float motor_ang[3] = {0.f};
+
+// PID
+using namespace NP1_Kin;
+
+double kp = 0;
+double ki = 0;
+double kd = 0;
+
+
+// FingerController fingerControl(kp, ki, kd, kp, ki, kd);
+
 
 // CAN setup implementation
 bool setupCan() {
@@ -260,33 +279,24 @@ void loop() {
         }
     }
 
-    // for (int i = 0; i < NUM_DRIVES; i++) {
-    //     // Handle any errors
-    //     if (odrives[i].user_data.received_heartbeat) {
-    //         Heartbeat_msg_t heartbeat = odrives[i].user_data.last_heartbeat;
-    //         if (heartbeat.Axis_Error != 0) {
-    //             Serial.println("error");
-    //             if (odrives[i].drive.clearErrors()) {
-    //                 odrives[i].drive.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-    //             }
-    //         }
-    //     }
-        
-    //     // Print feedback if motor is running
-    //     odrives[tensionID].is_running = true;
+    // Get initial position (motor_angle) once all tensioned
+    if (tensioned[0] && tensioned[1] && tensioned[2] && !got_init)
+    {
+        pumpEvents(can_intf);
+        for (int i = 0; i < NUM_DRIVES; i++)
+        {
+            Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
+            init_pos[i] = encoder.Pos_Estimate;
+            Serial.print("Motor ");
+            Serial.print(i);
+            Serial.print(" is at ");
+            Serial.println(init_pos[i]);
+        }
+        // set got_init
+        got_init = true;
+    }
 
-    //     if (odrives[tensionID].is_running && odrives[tensionID].user_data.received_feedback) {
-    //         unsigned long current_time = millis();
-    //         Serial.println("waiting for print");
-    //         Get_Encoder_Estimates_msg_t feedback = odrives[i].user_data.last_feedback;
-    //         Serial.print("ODrive ");
-    //         Serial.print(tensionID);
-    //         Serial.print(" - Position: ");
-    //         Serial.print(feedback.Pos_Estimate);
-    //         Serial.print(", Velocity: ");
-    //         Serial.println(feedback.Vel_Estimate);
-    //     }
-    // }
+    
 
     delay(1);  // Small delay to prevent overwhelming the system
 }

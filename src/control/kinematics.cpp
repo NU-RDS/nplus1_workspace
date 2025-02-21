@@ -76,13 +76,30 @@ namespace NP1_Kin
         for (int i = 0; i < 3; i++)
         {
            float motor_torque = force_tendon[i] * R;
-           if (motor_torque < STALL_TORQUE)
+           if (abs(motor_torque) < STALL_TORQUE)
            {
-               motor_torque = STALL_TORQUE;
+            if (motor_torque > 0)
+            {
+                motor_torque = STALL_TORQUE;
+            }
+
+            else
+            {
+                motor_torque = -STALL_TORQUE;
+            }
+               
            }
-           if (motor_torque > MAX_TORQUE)
+           if (abs(motor_torque) > MAX_TORQUE)
            {
-               motor_torque = MAX_TORQUE;
+            if (motor_torque > 0)
+            {
+                motor_torque = MAX_TORQUE;
+            }
+
+            else
+            {
+                motor_torque = -MAX_TORQUE;
+            }
            }
            motor_torques[i] = motor_torque;  // Store directly in the static array
         }
@@ -102,15 +119,20 @@ namespace NP1_Kin
     }
 
     // radian to degree
-    float radToDeg(float ang)
+    float RadToDeg(float ang)
     {
-        return ang / PI * 180.;
+        return ang / KIN_PI * 180.;
     }
 
     // degree to radian
     float DegToRad(float ang)
     {
-        return ang * PI / 180.;
+        return ang * KIN_PI / 180.;
+    }
+
+    // revolutions to degrees
+    float RevToDeg(float encoder)
+    {
+        return encoder * 360.0f;
     }
 }
-

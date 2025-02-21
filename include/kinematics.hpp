@@ -5,7 +5,7 @@
 
 namespace NP1_Kin
 {
-    constexpr float PI = 3.1415;
+    constexpr float KIN_PI = 3.1415;
     constexpr float R = .009;  // Replace with your R value
     constexpr float STALL_TORQUE = .0036;
     constexpr float MAX_TORQUE = .04;
@@ -26,9 +26,11 @@ namespace NP1_Kin
     float* angle_m2j(float ang1, float ang2, float ang3);
 
     // radian to degree
-    float radToDeg(float ang);
+    float RadToDeg(float ang);
 
     // degree to radian
     float DegToRad(float ang);
-}
 
+    // revolutions to degrees
+    float RevToDeg(float encoder);
+}

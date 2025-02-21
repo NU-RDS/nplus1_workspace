@@ -241,13 +241,18 @@ void loop() {
                     odrives[tensionID].is_running = true;
                     odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.015f);
                 }
-                else
+                else if (tensionID == 1)
                 {
                     odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
                     odrives[tensionID].is_running = true;
                     odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
                 }
-                
+                else if (tensionID == 2)
+                {
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                    odrives[tensionID].is_running = true;
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                }
 
                 prev_pos = feedback.Pos_Estimate;
                 last_measurement_time = current_time;

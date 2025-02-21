@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <vector>
 #include <iostream>
 
 
@@ -23,7 +24,7 @@ namespace NP1_Kin
     float* torque_j2m(float torque1, float torque2);
 
     // motor angle to joint angle
-    float* angle_m2j(float ang1, float ang2, float ang3);
+    std::vector<float> angle_m2j(float ang1, float ang2, float ang3);
 
     // radian to degree
     float RadToDeg(float ang);

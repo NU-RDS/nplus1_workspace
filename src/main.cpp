@@ -38,7 +38,7 @@ float motor_ang[3] = {0.f};
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 2.0, -2.0);
+FingerController controller = FingerController(1.0, 1.0, 0.0, 1.0, 1.0, 0.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -308,12 +308,12 @@ void loop() {
         }
         
         // motor shaft to joint ang
-        float* current_joint_ang = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        std::vector<float> current_joint_ang = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
         
         // PID
         // where did you get error/prev_ang?
         // need to fix type
-        std::vector<float> joint_torques = controller.computeTorques(targets, current_joint_ang);
+        // std::vector<float> joint_torques = controller.computeTorques(targets, current_joint_ang);
         float joint_torques[2] ={0.f}; 
         float* motor_torque = NP1_Kin::torque_j2m(joint_torques[0], joint_torques[1]);
         

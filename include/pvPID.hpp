@@ -18,10 +18,6 @@ private:
     float kp;  ///< Proportional gain
     float ki;  ///< Integral gain
     float kd;  ///< Derivative gain
-    
-    // Control limits
-    float max_torque;  ///< Maximum allowable torque output
-    float min_torque;  ///< Minimum allowable torque output
 
     // Error terms
     float integral_error;  ///< Accumulated integral error
@@ -45,8 +41,7 @@ public:
      * @param max_t Maximum torque limit
      * @param min_t Minimum torque limit
      */
-    JointPIDController(float p_gain, float i_gain, float d_gain, 
-                      float max_t, float min_t);
+    JointPIDController(float p_gain, float i_gain, float d_gain);
     
     /**
      * @brief Reset the controller state
@@ -93,8 +88,7 @@ public:
      */
     FingerController(
         float prox_p, float prox_i, float prox_d,
-        float dist_p, float dist_i, float dist_d,
-        float max_torque = 1.0, float min_torque = -1.0);
+        float dist_p, float dist_i, float dist_d);
     
     /**
      * @brief Compute control torques for both joints

@@ -11,11 +11,9 @@ void JointPIDController::initTiming() {
 }
 
 // Constructor
-JointPIDController::JointPIDController(float p_gain, float i_gain, float d_gain, 
-                                        float max_t, float min_t)
+JointPIDController::JointPIDController(float p_gain, float i_gain, float d_gain)
         : kp(p_gain), ki(i_gain), kd(d_gain),
-        integral_error(0.0), prev_error(0.0),
-        max_torque(max_t), min_torque(min_t) {
+        integral_error(0.0), prev_error(0.0) {
     initTiming();
 }
 
@@ -51,16 +49,15 @@ float JointPIDController::computeTorque(float target_angle, float current_angle,
     output += feedforward;
 
     // Apply torque limits
-    return std::max(min_torque, std::min(max_torque, output));
+    return output;
 }
 
 // Constructor for FingerController
 FingerController::FingerController(
     float prox_p, float prox_i, float prox_d,
-    float dist_p, float dist_i, float dist_d,
-    float max_torque, float min_torque)
-    : proximal_joint(prox_p, prox_i, prox_d, max_torque, min_torque),
-      distal_joint(dist_p, dist_i, dist_d, max_torque, min_torque) {}
+    float dist_p, float dist_i, float dist_d)
+    : proximal_joint(prox_p, prox_i, prox_d),
+      distal_joint(dist_p, dist_i, dist_d) {}
 
 // Compute control torques
 std::vector<float> FingerController::computeTorques(
@@ -95,9 +92,7 @@ int main() {
     // Initialize controller with PID gains
     FingerController finger(
         1.0, 0.1, 0.05,  // Proximal joint PID gains
-        0.8, 0.08, 0.04, // Distal joint PID gains
-        2.0,  // Max torque
-        -2.0  // Min torque
+        0.8, 0.08, 0.04 // Distal joint PID gains
     );
     
     // Target angles (in radians)

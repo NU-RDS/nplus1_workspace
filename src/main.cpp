@@ -38,14 +38,7 @@ float motor_ang[3] = {0.f};
 // PID
 using namespace NP1_Kin;
 
-// double kp = 0;
-// double ki = 0;
-// double kd = 0;
-
-// FingerController fingerControl(kp, ki, kd, kp, ki, kd);
-
-// FingerController fingerControl(kp, ki, kd, kp, ki, kd);
-
+FingerController controller = FingerController(1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 2.0, -2.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -320,7 +313,7 @@ void loop() {
         // PID
         // where did you get error/prev_ang?
         // need to fix type
-        // std::vector<double> joint_torques = fingerControl.computeTorques(targets, current_joint_ang, feedforward);
+        std::vector<float> joint_torques = controller.computeTorques(targets, current_joint_ang);
         float joint_torques[2] ={0.f}; 
         float* motor_torque = NP1_Kin::torque_j2m(joint_torques[0], joint_torques[1]);
         

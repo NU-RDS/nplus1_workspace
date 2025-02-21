@@ -7,6 +7,7 @@ FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
 
 // Array of ODrives
 const int NUM_DRIVES = 3;
+const int NUM_JOINTS = 2;
 struct ODriveControl {
     ODriveCAN drive;
     ODriveUserData user_data;
@@ -34,6 +35,9 @@ int tensionID = -1;
 bool got_init = false;
 float init_pos[3] = {0.f};
 float motor_ang[3] = {0.f};
+
+std::vector<float> target_joint_angles(3);
+std::vector<float> current_joint_angles(3);
 
 // PID
 using namespace NP1_Kin;
@@ -100,54 +104,36 @@ void processSerialCommand() {
         // Parse command format: "drive_num,direction"
         int commaIndex = command.indexOf(',');
         if (commaIndex != -1) {
-            int driveNum = command.substring(0, commaIndex).toInt();
+            // int driveNum = command.substring(0, commaIndex).toInt();
+            int jointNum = command.substring(0, commaIndex).toInt();
+            // String cmd = command.substring(commaIndex + 1);
             String cmd = command.substring(commaIndex + 1);
             
-            if (driveNum >= 0 && driveNum < NUM_DRIVES) {
-                if (cmd == "get_current") {
-                    // Get current values
-                    Get_Iq_msg_t current_msg;
-                    if (odrives[driveNum].drive.getCurrents(current_msg)) {
-                        Serial.print("ODrive ");
-                        Serial.print(driveNum);
-                        Serial.print(" Currents - Iq_Setpoint: ");
-                        Serial.print(current_msg.Iq_Setpoint);
-                        Serial.print(", Iq_Measured: ");
-                        Serial.print(current_msg.Iq_Measured);
-                    } else {
-                        Serial.print("ODrive ");
-                        Serial.print(driveNum);
-                        Serial.println(" - Failed to get currents");
-                    }
-                }
-                else if (cmd == "true" || cmd == "false") {
+            if (jointNum >= 0 && jointNum < NUM_JOINTS) {
+                if (cmd == "true" || cmd == "false") {
                     // Your existing rotation logic
                     bool clockwise = cmd.equals("true");
-                    float torque = clockwise ? CONSTANT_TORQUE : -CONSTANT_TORQUE;
-                    odrives[driveNum].current_torque = torque;
-                    odrives[driveNum].is_running = true;
-                    odrives[driveNum].drive.setTorque(torque);
+                    float angle = clockwise ? 1.f : -1.f;
+                    target_joint_angles[jointNum] += angle;
 
-                    Serial.print("Starting ODrive ");
-                    Serial.print(driveNum);
-                    Serial.println(clockwise ? " CW" : " CCW");
+                    Serial.println("Moving joint angle.");
                 }
-                else if (cmd == "ten") 
-                {
-                    doTension[driveNum] = true;
-                    tensionID = driveNum;
-                    if (tensioned[driveNum])
-                    {
-                        Serial.print("Motor ");
-                        Serial.print(tensionID);
-                        Serial.println(" is already tensioned");
-                    }
-                    else
-                    {
-                        Serial.print("Will tension ");
-                        Serial.println(tensionID);
-                    }
-                }
+                // else if (cmd == "ten") 
+                // {
+                //     doTension[driveNum] = true;
+                //     tensionID = driveNum;
+                //     if (tensioned[driveNum])
+                //     {
+                //         Serial.print("Motor ");
+                //         Serial.print(tensionID);
+                //         Serial.println(" is already tensioned");
+                //     }
+                //     else
+                //     {
+                //         Serial.print("Will tension ");
+                //         Serial.println(tensionID);
+                //     }
+                // }
             }
         }
     }
@@ -286,6 +272,11 @@ void loop() {
             Serial.print(" is at ");
             Serial.println(init_pos[i]);
         }
+
+        current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        Serial.print("Initial joint angles: ");
+        Serial.print(current_joint_angles[0]);
+        Serial.print(current_joint_angles[1]);
         // set got_init
         got_init = true;
     }
@@ -308,21 +299,20 @@ void loop() {
         }
         
         // motor shaft to joint ang
-        std::vector<float> current_joint_ang = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
         
         // PID
         // where did you get error/prev_ang?
         // need to fix type
-        // std::vector<float> joint_torques = controller.computeTorques(targets, current_joint_ang);
-        float joint_torques[2] ={0.f}; 
+        std::vector<float> joint_torques = controller.computeTorques(target_joint_angles, current_joint_angles);
         float* motor_torque = NP1_Kin::torque_j2m(joint_torques[0], joint_torques[1]);
         
         // command torque
         for (int i = 0; i < NUM_DRIVES; i++)
         {
-            // odrives[tensionID].current_torque = motor_torque[i];
-            // odrives[tensionID].is_running = true;
-            // odrives[tensionID].drive.setTorque(motor_torque[i]);
+            odrives[i].current_torque = motor_torque[i];
+            odrives[i].is_running = true;
+            odrives[i].drive.setTorque(motor_torque[i]);
             Serial.print("Motor ");
             Serial.print(i);
             Serial.print(" torque is ");

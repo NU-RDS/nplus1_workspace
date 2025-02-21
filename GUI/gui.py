@@ -68,6 +68,22 @@ class MotorControlGUI:
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
 
+        # Create Auto-Tensioning button
+        auto_tension_button = ttk.Button(
+            button_frame,
+            text="Auto-Tensioning",
+            command=lambda: self.send_command(drive_num, "ten")
+        )
+        auto_tension_button.pack(side=tk.LEFT, padx=10)
+
+        # Create Zero-Impedance button
+        zero_imp_button = ttk.Button(
+            button_frame,
+            text="Zero-Impedance",
+            command=lambda: self.send_command(drive_num, "zero_impedance")
+        )
+        zero_imp_button.pack(side=tk.LEFT, padx=10)
+
     def create_feedback_display(self):
         # Create frame for feedback
         feedback_frame = ttk.LabelFrame(
@@ -105,12 +121,12 @@ class MotorControlGUI:
         # Schedule the next update
         self.root.after(100, self.update_feedback)
 
-    def send_command(self, drive_num, direction):
+    def send_command(self, drive_num, command):
         print(
-            f"Sending {direction} command to {['Proximal', 'Distal'][drive_num]} motor")
+            f"Sending {command} command to {['Proximal', 'Distal'][drive_num]} motor")
         if self.ser:
             # Send motor command
-            message = f"{drive_num},{direction}\n"
+            message = f"{drive_num},{command}\n"
             self.ser.write(message.encode())
 
             # Optionally, request feedback or current values

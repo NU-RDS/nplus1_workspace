@@ -296,7 +296,23 @@ void loop() {
         got_init = true;
     }
 
-    
+    // PID
+    bool PID = true;
+    if (PID && got_init)
+    {
+        // get motor angle current encoder reading
+        pumpEvents(can_intf);
+        for (int i = 0; i < NUM_DRIVES; i++)
+        {
+            Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
+            motor_ang[i] = NP1_Kin::RevToDeg(encoder.Pos_Estimate - init_pos[i]);
+            Serial.print("Motor ");
+            Serial.print(i);
+            Serial.print(" is at ");
+            Serial.println(motor_ang[i]);
+        }
+        Serial.println("--------------------------------");
+    }
 
     delay(1);  // Small delay to prevent overwhelming the system
 }

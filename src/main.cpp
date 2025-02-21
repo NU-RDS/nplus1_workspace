@@ -24,6 +24,7 @@ const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
 
 bool tensioned[3] = {false, false, false};
 bool doTension[3] = {false, false, false};
+float tension_dir[3] = {-1., -1., 1.};
 int tensionID = -1;
 
 // CAN setup implementation
@@ -190,9 +191,9 @@ void loop() {
         unsigned long last_measurement_time = millis();  
         if (doTension[tensionID] && (!tensioned[tensionID]))
         {
-            odrives[tensionID].current_torque = CONSTANT_TORQUE;
+            odrives[tensionID].current_torque = tension_dir[tensionID] * CONSTANT_TORQUE;
             odrives[tensionID].is_running = true;
-            odrives[tensionID].drive.setTorque(CONSTANT_TORQUE);
+            odrives[tensionID].drive.setTorque(tension_dir[tensionID] * CONSTANT_TORQUE);
         }
 
         while (doTension[tensionID] && (!tensioned[tensionID]))
@@ -219,15 +220,34 @@ void loop() {
                     Serial.print("Tendon ");
                     Serial.print(tensionID);
                     Serial.println(" is tensioned. ");
-                    odrives[tensionID].current_torque = 0.0f;
-                    odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(0.0f);
+                    if (tensionID > 0)
+                    {
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                        odrives[tensionID].is_running = true;
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                    }
+                    else
+                    {
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.012f;
+                        odrives[tensionID].is_running = true;
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.012f);
+                    }
                     tensioned[tensionID] = true;
                     break;
                 }
-                odrives[tensionID].current_torque = CONSTANT_TORQUE;
-                odrives[tensionID].is_running = true;
-                odrives[tensionID].drive.setTorque(CONSTANT_TORQUE);
+                if (tensionID == 0)
+                {
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.012f;
+                    odrives[tensionID].is_running = true;
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.012f);
+                }
+                else
+                {
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                    odrives[tensionID].is_running = true;
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                }
+                
 
                 prev_pos = feedback.Pos_Estimate;
                 last_measurement_time = current_time;

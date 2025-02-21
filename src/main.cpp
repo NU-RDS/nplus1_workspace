@@ -1,4 +1,6 @@
 #include "odrive_can.hpp"
+#include "pvPID.hpp"
+#include "kinematics.hpp"
 
 // Global variables
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can_intf;
@@ -15,6 +17,16 @@ struct ODriveControl {
     {ODriveCAN(wrap_can_intf(can_intf), 1), ODriveUserData(), false, 0.0f},
     {ODriveCAN(wrap_can_intf(can_intf), 2), ODriveUserData(), false, 0.0f}
 };
+
+
+using namespace NP1_Kin;
+
+double kp = 0;
+double ki = 0;
+double kd = 0;
+
+FingerController fingerControl(kp, ki, kd, kp, ki, kd);
+std::vector<double> targets = {45.f, 45.f};
 
 // Constants
 const float CONSTANT_TORQUE = 0.004f;
@@ -183,6 +195,7 @@ void loop() {
     }
 
     processSerialCommand();
+
     
     // Tensioning
     if (tensionID != -1)
@@ -257,8 +270,18 @@ void loop() {
     }
 
     // PID
-    float joint0 = ;
-    float joint1 = ;
+    // TODO get motor angle {motor 0, motor 1, motor 2}
+    std::vector<float> motor = {0, 0, 0};
 
+    float* current_joint_ang = NP1_Kin::angle_m2j(motor[0], motor[1], motor[2]);
+    
+    std::vector<double> joint_torques = fingerControl.computeTorques(targets, current_joint_ang, feedforward);
+
+    float* motor_torque = NP1_Kin::torque_j2m(joint_torques[0], joint_torques[1]);
+    
+    // TODO command torque
+
+    // TODO refresh reading
+    
     delay(1);  // Small delay to prevent overwhelming the system
 }

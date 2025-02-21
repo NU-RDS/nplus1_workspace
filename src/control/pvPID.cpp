@@ -11,8 +11,8 @@ void JointPIDController::initTiming() {
 }
 
 // Constructor
-JointPIDController::JointPIDController(double p_gain, double i_gain, double d_gain, 
-                                        double max_t, double min_t)
+JointPIDController::JointPIDController(float p_gain, float i_gain, float d_gain, 
+                                        float max_t, float min_t)
         : kp(p_gain), ki(i_gain), kd(d_gain),
         integral_error(0.0), prev_error(0.0),
         max_torque(max_t), min_torque(min_t) {
@@ -28,24 +28,24 @@ void JointPIDController::reset() {
 }
 
 // Compute control output
-double JointPIDController::computeTorque(double target_angle, double current_angle, double feedforward) {
+float JointPIDController::computeTorque(float target_angle, float current_angle, float feedforward) {
     // Get time delta
     auto current_time = std::chrono::steady_clock::now();
-    double dt = std::chrono::duration<double>(current_time - last_update).count();
+    float dt = std::chrono::duration<float>(current_time - last_update).count();
     last_update = current_time;
 
     // Compute error
-    double error = target_angle - current_angle;
+    float error = target_angle - current_angle;
 
     // Update integral term with anti-windup
     integral_error += error * dt;
 
     // Compute derivative term
-    double derivative = dt > 0.0 ? (error - prev_error) / dt : 0.0;
+    float derivative = dt > 0.0 ? (error - prev_error) / dt : 0.0;
     prev_error = error;
 
     // Compute PID output
-    double output = kp * error + ki * integral_error + kd * derivative;
+    float output = kp * error + ki * integral_error + kd * derivative;
 
     // Add feedforward term
     output += feedforward;
@@ -56,23 +56,23 @@ double JointPIDController::computeTorque(double target_angle, double current_ang
 
 // Constructor for FingerController
 FingerController::FingerController(
-    double prox_p, double prox_i, double prox_d,
-    double dist_p, double dist_i, double dist_d,
-    double max_torque, double min_torque)
+    float prox_p, float prox_i, float prox_d,
+    float dist_p, float dist_i, float dist_d,
+    float max_torque, float min_torque)
     : proximal_joint(prox_p, prox_i, prox_d, max_torque, min_torque),
       distal_joint(dist_p, dist_i, dist_d, max_torque, min_torque) {}
 
 // Compute control torques
-std::vector<double> FingerController::computeTorques(
-    const std::vector<double>& target_angles,
-    const std::vector<double>& current_angles,
-    const std::vector<double>& feedforward) {
+std::vector<float> FingerController::computeTorques(
+    const std::vector<float>& target_angles,
+    const std::vector<float>& current_angles,
+    const std::vector<float>& feedforward) {
     
     if (target_angles.size() != 2 || current_angles.size() != 2) {
         std::cout << "Both target and current angles must have size 2";
     }
     
-    std::vector<double> torques(2);
+    std::vector<float> torques(2);
     torques[0] = proximal_joint.computeTorque(
         target_angles[0], current_angles[0], 
         feedforward.size() > 0 ? feedforward[0] : 0.0);
@@ -101,16 +101,16 @@ int main() {
     );
     
     // Target angles (in radians)
-    std::vector<double> targets = {M_PI/4, M_PI/3};
+    std::vector<float> targets = {M_PI/4, M_PI/3};
     
     // Current angles (in radians)
-    std::vector<double> current = {0.0, 0.0};
+    std::vector<float> current = {0.0, 0.0};
     
     // Optional feedforward terms
-    std::vector<double> feedforward = {0.1, 0.1};
+    std::vector<float> feedforward = {0.1, 0.1};
     
     // Compute control torques
-    std::vector<double> torques = finger.computeTorques(targets, current, feedforward);
+    std::vector<float> torques = finger.computeTorques(targets, current, feedforward);
     
     return 0;
 }

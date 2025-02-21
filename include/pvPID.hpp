@@ -15,17 +15,17 @@
 class JointPIDController {
 private:
     // PID gains
-    double kp;  ///< Proportional gain
-    double ki;  ///< Integral gain
-    double kd;  ///< Derivative gain
+    float kp;  ///< Proportional gain
+    float ki;  ///< Integral gain
+    float kd;  ///< Derivative gain
     
     // Control limits
-    double max_torque;  ///< Maximum allowable torque output
-    double min_torque;  ///< Minimum allowable torque output
+    float max_torque;  ///< Maximum allowable torque output
+    float min_torque;  ///< Minimum allowable torque output
 
     // Error terms
-    double integral_error;  ///< Accumulated integral error
-    double prev_error;     ///< Previous error for derivative calculation
+    float integral_error;  ///< Accumulated integral error
+    float prev_error;     ///< Previous error for derivative calculation
     
     // Timing
     std::chrono::steady_clock::time_point last_update;
@@ -45,8 +45,8 @@ public:
      * @param max_t Maximum torque limit
      * @param min_t Minimum torque limit
      */
-    JointPIDController(double p_gain, double i_gain, double d_gain, 
-                      double max_t, double min_t);
+    JointPIDController(float p_gain, float i_gain, float d_gain, 
+                      float max_t, float min_t);
     
     /**
      * @brief Reset the controller state
@@ -63,8 +63,8 @@ public:
      * @param feedforward Optional feedforward term (default: 0.0)
      * @return double Computed torque within specified limits
      */
-    double computeTorque(double target_angle, double current_angle, 
-                        double feedforward = 0.0);
+    float computeTorque(float target_angle, float current_angle, 
+                        float feedforward = 0.0);
 };
 
 /**
@@ -92,9 +92,9 @@ public:
      * @param min_torque Minimum torque limit for both joints
      */
     FingerController(
-        double prox_p, double prox_i, double prox_d,
-        double dist_p, double dist_i, double dist_d,
-        double max_torque = 1.0, double min_torque = -1.0);
+        float prox_p, float prox_i, float prox_d,
+        float dist_p, float dist_i, float dist_d,
+        float max_torque = 1.0, float min_torque = -1.0);
     
     /**
      * @brief Compute control torques for both joints
@@ -105,10 +105,10 @@ public:
      * @return std::vector<double> Computed torques for both joints
      * @throws std::invalid_argument if input vectors are not size 2
      */
-    std::vector<double> computeTorques(
-        const std::vector<double>& target_angles,
-        const std::vector<double>& current_angles,
-        const std::vector<double>& feedforward = {0.0, 0.0});
+    std::vector<float> computeTorques(
+        const std::vector<float>& target_angles,
+        const std::vector<float>& current_angles,
+        const std::vector<float>& feedforward = {0.0, 0.0});
     
     /**
      * @brief Reset both joint controllers

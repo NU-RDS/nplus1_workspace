@@ -8,7 +8,7 @@ import queue
 class MotorControlGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("ODrive Control Interface")
+        self.root.title("Motor Control Interface")
 
         # Create queue for thread-safe communication
         self.message_queue = queue.Queue()
@@ -28,13 +28,12 @@ class MotorControlGUI:
         self.notebook = ttk.Notebook(self.main_container)
         self.notebook.pack(pady=10, expand=True)
 
-        # Create tabs for each ODrive
-        self.tabs = []
-        for i in range(3):
+        # Create Proximal and Distal tabs
+        self.tabs = {'Proximal': 0, 'Distal': 1}
+        for tab_name in self.tabs:
             tab = ttk.Frame(self.notebook)
-            self.tabs.append(tab)
-            self.notebook.add(tab, text=f"ODrive {i}")
-            self.create_controls(tab, i)
+            self.notebook.add(tab, text=tab_name)
+            self.create_controls(tab, self.tabs[tab_name])
 
         # Create feedback display area
         self.create_feedback_display()
@@ -57,7 +56,7 @@ class MotorControlGUI:
         cw_button = ttk.Button(
             button_frame,
             text="CW",
-            command=lambda: self.rotate_cw(drive_num)
+            command=lambda: self.send_command(drive_num, "CW")
         )
         cw_button.pack(side=tk.LEFT, padx=10)
 
@@ -65,17 +64,9 @@ class MotorControlGUI:
         ccw_button = ttk.Button(
             button_frame,
             text="CCW",
-            command=lambda: self.rotate_ccw(drive_num)
+            command=lambda: self.send_command(drive_num, "CCW")
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
-
-        # Create Zero-Impedance button
-        zero_imp_button = ttk.Button(
-            button_frame,
-            text="auto-tensioning",
-            command=lambda: self.autotensioning(drive_num)
-        )
-        zero_imp_button.pack(side=tk.LEFT, padx=10)
 
     def create_feedback_display(self):
         # Create frame for feedback
@@ -114,38 +105,17 @@ class MotorControlGUI:
         # Schedule the next update
         self.root.after(100, self.update_feedback)
 
-    def rotate_cw(self, drive_num):
-        print(f"Rotating ODrive {drive_num} clockwise")
+    def send_command(self, drive_num, direction):
+        print(
+            f"Sending {direction} command to {['Proximal', 'Distal'][drive_num]} motor")
         if self.ser:
-            # Send rotation command
-            message = f"{drive_num},true\n"
+            # Send motor command
+            message = f"{drive_num},{direction}\n"
             self.ser.write(message.encode())
 
-            # Request current values
-            # New command to request current
+            # Optionally, request feedback or current values
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
-
-    def rotate_ccw(self, drive_num):
-        print(f"Rotating ODrive {drive_num} counter-clockwise")
-        if self.ser:
-            # Send rotation command
-            message = f"{drive_num},false\n"
-            self.ser.write(message.encode())
-
-            # Request current values
-            # New command to request current
-            message = f"{drive_num},get_current\n"
-            self.ser.write(message.encode())
-
-    # Command for setting an ODrive to zero-impedance mode
-    def autotensioning(self, drive_num):
-        print(f"Setting ODrive {drive_num} to auto-tensioning mode")
-        if self.ser:
-            # Send rotation command
-            message = f"{drive_num},ten\n"
-            self.ser.write(message.encode())
-
 
     def __del__(self):
         self.running = False
@@ -156,5 +126,5 @@ class MotorControlGUI:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MotorControlGUI(root)
-    root.geometry("400x500")  # Increased window size to accommodate feedback
+    root.geometry("400x500")
     root.mainloop()

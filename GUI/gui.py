@@ -8,14 +8,14 @@ import queue
 class MotorControlGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("ODrive Control Interface")
+        self.root.title("Motor Control Interface")
 
         # Create queue for thread-safe communication
         self.message_queue = queue.Queue()
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 11520, timeout=0.1)
+            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -28,12 +28,11 @@ class MotorControlGUI:
         self.notebook = ttk.Notebook(self.main_container)
         self.notebook.pack(pady=10, expand=True)
 
-        # Create tabs for each ODrive
-        self.tabs = []
-        for i in range(3):
+        # Create Proximal and Distal tabs
+        self.tabs = ["Proximal", "Distal"]
+        for i in range(2):
             tab = ttk.Frame(self.notebook)
-            self.tabs.append(tab)
-            self.notebook.add(tab, text=f"ODrive {i}")
+            self.notebook.add(tab, text=self.tabs[i])
             self.create_controls(tab, i)
 
         # Create feedback display area
@@ -48,7 +47,7 @@ class MotorControlGUI:
         # Schedule the first update check
         self.root.after(100, self.update_feedback)
 
-    def create_controls(self, tab, drive_num):
+    def create_controls(self, tab, joint_num):
         # Create frame for buttons
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=20)
@@ -57,7 +56,7 @@ class MotorControlGUI:
         cw_button = ttk.Button(
             button_frame,
             text="CW",
-            command=lambda: self.rotate_cw(drive_num)
+            command=lambda: self.send_command(joint_num, "forward")
         )
         cw_button.pack(side=tk.LEFT, padx=10)
 
@@ -65,9 +64,25 @@ class MotorControlGUI:
         ccw_button = ttk.Button(
             button_frame,
             text="CCW",
-            command=lambda: self.rotate_ccw(drive_num)
+            command=lambda: self.send_command(joint_num, "backward")
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
+
+        # Create Auto-Tensioning button
+        auto_tension_button = ttk.Button(
+            button_frame,
+            text="Auto-Tensioning",
+            command=lambda: self.send_command(joint_num, "ten")
+        )
+        auto_tension_button.pack(side=tk.LEFT, padx=10)
+
+        # Create Zero-Impedance button
+        zero_imp_button = ttk.Button(
+            button_frame,
+            text="Zero-Impedance",
+            command=lambda: self.send_command(joint_num, "zero_impedance")
+        )
+        zero_imp_button.pack(side=tk.LEFT, padx=10)
 
     def create_feedback_display(self):
         # Create frame for feedback
@@ -106,28 +121,10 @@ class MotorControlGUI:
         # Schedule the next update
         self.root.after(100, self.update_feedback)
 
-    def rotate_cw(self, drive_num):
-        print(f"Rotating ODrive {drive_num} clockwise")
+    def send_command(self, joint_num, command):
         if self.ser:
-            # Send rotation command
-            message = f"{drive_num},true\n"
-            self.ser.write(message.encode())
-
-            # Request current values
-            # New command to request current
-            message = f"{drive_num},get_current\n"
-            self.ser.write(message.encode())
-
-    def rotate_ccw(self, drive_num):
-        print(f"Rotating ODrive {drive_num} counter-clockwise")
-        if self.ser:
-            # Send rotation command
-            message = f"{drive_num},false\n"
-            self.ser.write(message.encode())
-
-            # Request current values
-            # New command to request current
-            message = f"{drive_num},get_current\n"
+            # Send motor command
+            message = f"{joint_num},{command}\n"
             self.ser.write(message.encode())
 
     def __del__(self):
@@ -139,5 +136,5 @@ class MotorControlGUI:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MotorControlGUI(root)
-    root.geometry("400x500")  # Increased window size to accommodate feedback
+    root.geometry("400x500")
     root.mainloop()

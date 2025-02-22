@@ -1,5 +1,4 @@
 #include <cmath>
-#include <vector>
 #include "kinematics.hpp"
 
 using namespace std;

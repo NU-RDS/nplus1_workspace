@@ -109,12 +109,12 @@ namespace NP1_Kin
     }
 
     // motor angle to joint angle
-    std::vector<float> angle_m2j(float ang0, float ang1, float ang2)
+    float* angle_m2j(float ang0, float ang1, float ang2)
     {
-        std::vector<float> angle_joint;
+        float angle_joint[2];
 
-        angle_joint.push_back(jacobian_ang[0] * ang0 + jacobian_ang[1] * ang1 + jacobian_ang[2] * ang2); // dip
-        angle_joint.push_back(jacobian_ang[3] * ang0 + jacobian_ang[4] * ang1 + jacobian_ang[5] * ang2); // pip
+        angle_joint[0] = jacobian_ang[0] * ang0 + jacobian_ang[1] * ang1 + jacobian_ang[2] * ang2; // dip
+        angle_joint[1] = jacobian_ang[3] * ang0 + jacobian_ang[4] * ang1 + jacobian_ang[5] * ang2; // pip
 
         return angle_joint;
     }

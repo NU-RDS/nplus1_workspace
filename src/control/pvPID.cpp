@@ -1,4 +1,3 @@
-#include <vector>
 #include <cmath>
 #include <chrono>
 #include <iostream>
@@ -16,7 +15,6 @@ JointPIDController::JointPIDController(float p_gain, float i_gain, float d_gain)
         integral_error(0.0), prev_error(0.0) {
     initTiming();
 }
-
 
 // Reset controller state
 void JointPIDController::reset() {
@@ -60,24 +58,18 @@ FingerController::FingerController(
       distal_joint(dist_p, dist_i, dist_d) {}
 
 // Compute control torques
-std::vector<float> FingerController::computeTorques(
-    const std::vector<float>& target_angles,
-    const std::vector<float>& current_angles,
-    const std::vector<float>& feedforward) {
-    
-    if (target_angles.size() != 2 || current_angles.size() != 2) {
-        std::cout << "Both target and current angles must have size 2";
-    }
-    
-    std::vector<float> torques(2);
+float* FingerController::computeTorques(
+    const float target_angles[2],
+    const float current_angles[2],
+    const float feedforward[2]) {
+
+    float torques[2];
     torques[0] = proximal_joint.computeTorque(
-        target_angles[0], current_angles[0], 
-        feedforward.size() > 0 ? feedforward[0] : 0.0);
+        target_angles[0], current_angles[0], feedforward[0]);
     
     torques[1] = distal_joint.computeTorque(
-        target_angles[1], current_angles[1],
-        feedforward.size() > 1 ? feedforward[1] : 0.0);
-    
+        target_angles[1], current_angles[1], feedforward[1]);
+
     return torques;
 }
 
@@ -96,16 +88,15 @@ int main() {
     );
     
     // Target angles (in radians)
-    std::vector<float> targets = {M_PI/4, M_PI/3};
+    float targets[2] = {M_PI/4, M_PI/3};
     
     // Current angles (in radians)
-    std::vector<float> current = {0.0, 0.0};
+    float current[2] = {0.0, 0.0};
     
     // Optional feedforward terms
-    std::vector<float> feedforward = {0.1, 0.1};
+    float feedforward[2] = {0.1, 0.1};
     
-    // Compute control torques
-    std::vector<float> torques = finger.computeTorques(targets, current, feedforward);
+    float* torques = finger.computeTorques(targets, current, feedforward);
     
     return 0;
 }

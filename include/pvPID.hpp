@@ -1,7 +1,6 @@
 #ifndef FINGER_PID_CONTROLLER_HPP
 #define FINGER_PID_CONTROLLER_HPP
 
-#include <vector>
 #include <chrono>
 #include <stdexcept>
 #include <cmath>
@@ -21,7 +20,7 @@ private:
 
     // Error terms
     float integral_error;  ///< Accumulated integral error
-    float prev_error;     ///< Previous error for derivative calculation
+    float prev_error;      ///< Previous error for derivative calculation
     
     // Timing
     std::chrono::steady_clock::time_point last_update;
@@ -38,8 +37,6 @@ public:
      * @param p_gain Proportional gain
      * @param i_gain Integral gain
      * @param d_gain Derivative gain
-     * @param max_t Maximum torque limit
-     * @param min_t Minimum torque limit
      */
     JointPIDController(float p_gain, float i_gain, float d_gain);
     
@@ -56,7 +53,7 @@ public:
      * @param target_angle Desired joint angle in radians
      * @param current_angle Current joint angle in radians
      * @param feedforward Optional feedforward term (default: 0.0)
-     * @return double Computed torque within specified limits
+     * @return float Computed torque within specified limits
      */
     float computeTorque(float target_angle, float current_angle, 
                         float feedforward = 0.0);
@@ -83,8 +80,6 @@ public:
      * @param dist_p Distal joint proportional gain
      * @param dist_i Distal joint integral gain
      * @param dist_d Distal joint derivative gain
-     * @param max_torque Maximum torque limit for both joints
-     * @param min_torque Minimum torque limit for both joints
      */
     FingerController(
         float prox_p, float prox_i, float prox_d,
@@ -93,16 +88,15 @@ public:
     /**
      * @brief Compute control torques for both joints
      * 
-     * @param target_angles Vector of target angles [proximal, distal] in radians
-     * @param current_angles Vector of current angles [proximal, distal] in radians
-     * @param feedforward Vector of feedforward terms (optional)
-     * @return std::vector<double> Computed torques for both joints
-     * @throws std::invalid_argument if input vectors are not size 2
+     * @param target_angles Array of target angles [proximal, distal] in radians
+     * @param current_angles Array of current angles [proximal, distal] in radians
+     * @param feedforward Array of feedforward terms (optional)
+     * @return float[2] Computed torques for both joints
      */
-    std::vector<float> computeTorques(
-        const std::vector<float>& target_angles,
-        const std::vector<float>& current_angles,
-        const std::vector<float>& feedforward = {0.0, 0.0});
+    float* computeTorques(
+        const float target_angles[2],
+        const float current_angles[2],
+        const float feedforward[2]);
     
     /**
      * @brief Reset both joint controllers

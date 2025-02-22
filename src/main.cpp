@@ -36,8 +36,8 @@ bool got_init = false;
 float init_pos[3] = {0.f};
 float motor_ang[3] = {0.f};
 
-std::vector<float> target_joint_angles(3);
-std::vector<float> current_joint_angles(3);
+float target_joint_angles[3] = {0.0, 0.0, 0.0};
+float current_joint_angles[3] = {0.0, 0.0, 0.0};
 
 // PID
 using namespace NP1_Kin;
@@ -273,7 +273,10 @@ void loop() {
             Serial.println(init_pos[i]);
         }
 
-        current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        float* joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        for (int i = 0; i < NUM_JOINTS; i++) {
+            current_joint_angles[i] = joint_angles[i];
+        }
         Serial.print("Initial joint angles: ");
         Serial.print(current_joint_angles[0]);
         Serial.print(current_joint_angles[1]);
@@ -299,12 +302,15 @@ void loop() {
         }
         
         // motor shaft to joint ang
-        current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
-        
+        float* joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        for (int i = 0; i < NUM_JOINTS; i++) {
+            current_joint_angles[i] = joint_angles[i];
+        }
         // PID
         // where did you get error/prev_ang?
         // need to fix type
-        std::vector<float> joint_torques = controller.computeTorques(target_joint_angles, current_joint_angles);
+        float feedforward[2] = {0.f, 0.f};
+        float* joint_torques = controller.computeTorques(target_joint_angles, current_joint_angles, feedforward);
         float* motor_torque = NP1_Kin::torque_j2m(joint_torques[0], joint_torques[1]);
         
         // command torque

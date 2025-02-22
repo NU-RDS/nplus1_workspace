@@ -79,24 +79,3 @@ void FingerController::reset() {
     distal_joint.reset();
 }
 
-// Example usage
-int main() {
-    // Initialize controller with PID gains
-    FingerController finger(
-        1.0, 0.1, 0.05,  // Proximal joint PID gains
-        0.8, 0.08, 0.04 // Distal joint PID gains
-    );
-    
-    // Target angles (in radians)
-    float targets[2] = {M_PI/4, M_PI/3};
-    
-    // Current angles (in radians)
-    float current[2] = {0.0, 0.0};
-    
-    // Optional feedforward terms
-    float feedforward[2] = {0.1, 0.1};
-    
-    float* torques = finger.computeTorques(targets, current, feedforward);
-    
-    return 0;
-}

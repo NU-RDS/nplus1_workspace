@@ -21,13 +21,15 @@ const float CONSTANT_TORQUE = 0.004f;
 const float TENSION_POS_THRES = 0.01f;
 const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
 
-
+// Auto-tensioning mode constants
 bool tensioned[3] = {false, false, false};
 bool doTension[3] = {false, false, false};
 float tension_dir[3] = {-1., -1., 1.};
 int tensionID = -1;
 
+// Impedance mode constants
 bool ZERO_IMPEDANCE_MODE = false;
+float prev_pos[3] = {0.0, 0.0, 0.0}; // For keeping track of all motor positions, to see if any have moved. If they have, we will adjust torque on all others accordingly.
 
 // CAN setup implementation
 bool setupCan() {
@@ -196,12 +198,87 @@ void loop() {
     processSerialCommand();
 
     if (ZERO_IMPEDANCE_MODE){
-        // Set torque for all motors to slight pulling torque
+        ///
+        /// This code works!
+        ///
+        // Set torque for all motors to slight pulling torque. CONSTANT_TORQUE * 0.75 works well
         for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
-            odrives[driveNum].current_torque = tension_dir[driveNum] * CONSTANT_TORQUE * 0.6;
+
+            Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback;
+            float new_pos = feedback.Pos_Estimate;
+            float dif = new_pos - prev_pos[driveNum];
+            Serial.print("Motor ");
+            Serial.print(driveNum);
+            Serial.print(" position dif: ");
+            Serial.println(dif);
+
+            if (dif > 0){
+                // This motor has changed positions, meaning 
+            }
+
+            odrives[driveNum].current_torque = tension_dir[driveNum] * CONSTANT_TORQUE * 0.75;
             odrives[driveNum].is_running = true;
-            odrives[driveNum].drive.setTorque(tension_dir[driveNum] * CONSTANT_TORQUE * 0.6);
+            odrives[driveNum].drive.setTorque(tension_dir[driveNum] * CONSTANT_TORQUE * 0.75);
         }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///
+        /// The following code is experimental!
+        /// Comment out the working code above if you want to try this.
+        /// 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /* 
+        // 1. Get position changes for all motors
+        // 2. Determine immediate motor velocities <- you only have information for motors being pulled, not those being slacked
+        // 3. Torque those NOT moving, to pick up slack
+        // ??? Use kinematics to determine how to move the others ???
+
+        // 1. Get position changes for all motors 
+        float pos_difs[3] = {0, 0, 0};
+        for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+            Get_Encoder_Estimates_msg_t feedback = odrives[driveNum].user_data.last_feedback; // get position info from odrive
+            float new_pos = feedback.Pos_Estimate; // extract position
+            pos_difs[driveNum] = abs(new_pos - prev_pos[driveNum]); // save position difference
+            prev_pos[driveNum] = new_pos; // update previous position
+
+
+            if (pos_difs[driveNum] > 0.01 || pos_difs[driveNum] < -0.01){
+                Serial.print("Motor ");
+                Serial.print(driveNum);
+                Serial.print(" position dif: ");
+                Serial.println(pos_difs[driveNum]);
+            }
+        }
+
+        // Check if all motor position differences are roughly 0. If so, do nothing.
+        bool allZero = true;
+        for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+            if (pos_difs[driveNum] > 0.01){
+                allZero = false;
+            }
+        }
+        if (allZero){
+            // If nothing is moving, set all motor torques to 0
+            for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+                odrives[driveNum].current_torque = 0.0f;
+                odrives[driveNum].is_running = true;  // ??????? todo should this be false
+                odrives[driveNum].drive.setTorque(0.0f);
+            }
+        } else {
+            // 2. Pick largest pos_dif, and make other 2 motors take out slack
+            int moved_motor_index = std::distance(pos_difs, std::max_element(pos_difs, pos_difs + sizeof(pos_difs) / sizeof(float))); // Find index of highest absolute value position change
+            for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+                // Skip the motor which moved
+                if (driveNum == moved_motor_index){ 
+                    continue; 
+                }
+                // Set the others to pull
+                odrives[driveNum].current_torque = tension_dir[driveNum] * CONSTANT_TORQUE;
+                odrives[driveNum].is_running = true;
+                odrives[driveNum].drive.setTorque(tension_dir[driveNum] * CONSTANT_TORQUE);
+            }
+        }
+        */
     }
    
     if (tensionID != -1)

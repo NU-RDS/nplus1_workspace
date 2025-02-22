@@ -144,6 +144,7 @@ void processSerialCommand() {
                 {
                     // set zero-impedance mode
                     ZERO_IMPEDANCE_MODE = true;
+                    Serial.println("Enabling zero-impedance mode");
                 }
             }
         }
@@ -194,7 +195,14 @@ void loop() {
 
     processSerialCommand();
 
-    
+    if (ZERO_IMPEDANCE_MODE){
+        // Set torque for all motors to slight pulling torque
+        for (int driveNum = 0; driveNum < NUM_DRIVES; driveNum++){
+            odrives[driveNum].current_torque = tension_dir[driveNum] * CONSTANT_TORQUE * 0.6;
+            odrives[driveNum].is_running = true;
+            odrives[driveNum].drive.setTorque(tension_dir[driveNum] * CONSTANT_TORQUE * 0.6);
+        }
+    }
    
     if (tensionID != -1)
     {

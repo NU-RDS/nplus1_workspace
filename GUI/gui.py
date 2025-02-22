@@ -15,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('', 115200, timeout=0.1)
+            self.ser = serial.Serial('/dev/tty.usbmodem166396801', 115200, timeout=0.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None
@@ -69,13 +69,21 @@ class MotorControlGUI:
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
 
-        # Create Zero-Impedance button
-        zero_imp_button = ttk.Button(
+        # Create auto-tensioning button
+        auto_tensioning = ttk.Button(
             button_frame,
             text="auto-tensioning",
             command=lambda: self.autotensioning(drive_num)
         )
-        zero_imp_button.pack(side=tk.LEFT, padx=10)
+        auto_tensioning.pack(side=tk.LEFT, padx=10)
+
+        # Create zero-impedance button
+        zero_impedance = ttk.Button(
+            button_frame,
+            text="zero impedance",
+            command=lambda: self.zero_impedance(drive_num)
+        )
+        zero_impedance.pack(side=tk.LEFT, padx=10)
 
     def create_feedback_display(self):
         # Create frame for feedback
@@ -138,12 +146,20 @@ class MotorControlGUI:
             message = f"{drive_num},get_current\n"
             self.ser.write(message.encode())
 
-    # Command for setting an ODrive to zero-impedance mode
+    # Command for setting an ODrive to auto-tension mode
     def autotensioning(self, drive_num):
         print(f"Setting ODrive {drive_num} to auto-tensioning mode")
         if self.ser:
             # Send rotation command
             message = f"{drive_num},ten\n"
+            self.ser.write(message.encode())
+
+    # Command for setting an ODrive to zero-impedance mode
+    def zero_impedance(self, drive_num):
+        print(f"Setting finger to zero-impedance mode")
+        if self.ser:
+            # Send rotation command
+            message = f"{drive_num},imp\n"
             self.ser.write(message.encode())
 
 

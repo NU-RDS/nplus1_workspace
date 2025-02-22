@@ -27,6 +27,8 @@ bool doTension[3] = {false, false, false};
 float tension_dir[3] = {-1., -1., 1.};
 int tensionID = -1;
 
+bool ZERO_IMPEDANCE_MODE = false;
+
 // CAN setup implementation
 bool setupCan() {
     can_intf.begin();
@@ -89,6 +91,9 @@ void processSerialCommand() {
         if (commaIndex != -1) {
             int driveNum = command.substring(0, commaIndex).toInt();
             String cmd = command.substring(commaIndex + 1);
+
+            // Reset zero-impedance mode
+            ZERO_IMPEDANCE_MODE = false;
             
             if (driveNum >= 0 && driveNum < NUM_DRIVES) {
                 if (cmd == "get_current") {
@@ -134,6 +139,11 @@ void processSerialCommand() {
                         Serial.print("Will tension ");
                         Serial.println(tensionID);
                     }
+                }
+                else if (cmd == "imp")
+                {
+                    // set zero-impedance mode
+                    ZERO_IMPEDANCE_MODE = true;
                 }
             }
         }
@@ -183,6 +193,8 @@ void loop() {
     }
 
     processSerialCommand();
+
+    
    
     if (tensionID != -1)
     {

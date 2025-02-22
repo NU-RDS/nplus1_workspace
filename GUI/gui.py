@@ -15,7 +15,7 @@ class MotorControlGUI:
 
         # Initialize serial communication
         try:
-            self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+            self.ser = serial.Serial('', 115200, timeout=0.1)
         except serial.SerialException:
             print("Error: Could not open serial port")
             self.ser = None

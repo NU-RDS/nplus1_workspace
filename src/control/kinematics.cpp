@@ -84,21 +84,21 @@ namespace NP1_Kin
             motor_torques[0] = toShaft(force_tendon[i] * R_motor);
         }
 
-        // float max_val = *max_element(motor_torques, motor_torques+3);
+        float max_val = *max_element(motor_torques, motor_torques+3);
     
-        // // now all force on tendon should be positive
-        // // calculate for motor torque 
+        // now all force on tendon should be positive
+        // calculate for motor torque 
 
-        // float scale =  0.;
-        // if (abs(max_val) > MAX_TORQUE) {
-        //     scale = max_val / MAX_TORQUE;
-        // }
+        float scale =  0.;
+        if (abs(max_val) > MAX_TORQUE) {
+            scale = max_val / MAX_TORQUE;
+        }
 
-        // if (scale != 0.) {
-        //     for (int i = 0; i < 3; i++) {
-        //         motor_torques[0] = motor_torques[0]*scale;
-        //     }
-        // }
+        if (scale != 0.) {
+            for (int i = 0; i < 3; i++) {
+                motor_torques[0] = motor_torques[0]*scale;
+            }
+        }
         
 
         for (int i = 0; i < 3; i++)

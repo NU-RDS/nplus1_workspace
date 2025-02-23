@@ -7,13 +7,17 @@ using namespace std;
 namespace NP1_Kin
 {
 
+    std::vector<float> offsets(3);
+
+
     // helper: torque to tendon force
     float* f_tendon(float tor0, float tor1)
     {
         static float tendon[3];
         tendon[0] = A_dagger[0] * tor0 + A_dagger[1] * tor1; // tendon one motor 0
-        tendon[1] = A_dagger[2] * tor0 + A_dagger[3] * tor1;// tendon one motor 1
+        tendon[1] = A_dagger[2] * tor0 + A_dagger[3] * tor1; // tendon one motor 1
         tendon[2] = A_dagger[4] * tor0 + A_dagger[5] * tor1; // tendon one motor 2
+
         return tendon;
     }
 
@@ -24,13 +28,13 @@ namespace NP1_Kin
         float temp = 0;
         for (int i = 0; i < 3; i++)
         {
-            if (i < 2)
+            if (i > 0)
             {
                 temp = 0. - tendon[i];
             }
             else
             {
-                temp = (0. - tendon[i])/2;
+                temp = (0. + tendon[i])/2;
             }
             if (temp > alpha)
             {
@@ -40,13 +44,13 @@ namespace NP1_Kin
         // after we calculated alpha
         for (int i = 0; i < 3; i++)
         {
-            if (i < 2)
+            if (i > 0)
             {
                 tendon[i] = tendon[i] + alpha;
             }
             else
             {
-                tendon[i] = tendon[i] + 2 * alpha;
+                tendon[i] = tendon[i] - 2 * alpha;
             }
         }
 
@@ -54,19 +58,23 @@ namespace NP1_Kin
 
 
     // joint toruqe to motor torque
-    float* torque_j2m(float torque0, float torque1)
+    float* torque_j2m(float* force_tendon)
     {
-        static float motor_torques[3] = {0};  // Keep only this declaration
-        float* force_tendon = f_tendon(torque0, torque1);
+        static float motor_torques[3] = {0.f};  // Keep only this declaration
     
-        // check if need offset
+        // // check if need offset
         bool positive_force = true;
         for (int i = 0; i < 3; i++)
         {
-            positive_force = positive_force && (force_tendon[i] > 0.);
+            if (i ==0) {
+                positive_force = positive_force && ((force_tendon[i] * -1.) > 0.);
+            }
+            else {
+                positive_force = positive_force && (force_tendon[i] > 0.);
+            }
         }
     
-        // any tenson force not positive
+        // // any tenson force not positive
         if (!positive_force)
         {
             f_offset(force_tendon);
@@ -76,31 +84,24 @@ namespace NP1_Kin
         // calculate for motor torque 
         for (int i = 0; i < 3; i++)
         {
-           float motor_torque = force_tendon[i] * R;
+           float motor_torque = toShaft(force_tendon[i] * R_motor);
            if (abs(motor_torque) < STALL_TORQUE)
            {
-            if (motor_torque > 0)
-            {
-                motor_torque = STALL_TORQUE;
-            }
-
-            else
-            {
-                motor_torque = -STALL_TORQUE;
-            }
-               
+                if (i == 0) {
+                    motor_torque = -STALL_TORQUE;
+                }
+                else {
+                    motor_torque = STALL_TORQUE;
+                }
            }
            if (abs(motor_torque) > MAX_TORQUE)
            {
-            if (motor_torque > 0)
-            {
-                motor_torque = MAX_TORQUE;
-            }
-
-            else
-            {
-                motor_torque = -MAX_TORQUE;
-            }
+                if (i == 0) {
+                    motor_torque = -MAX_TORQUE;
+                }
+                else {
+                    motor_torque = MAX_TORQUE;
+                }
            }
            motor_torques[i] = motor_torque;  // Store directly in the static array
         }
@@ -113,8 +114,8 @@ namespace NP1_Kin
     {
         std::vector<float> angle_joint;
 
-        angle_joint.push_back(jacobian_ang[0] * ang0 + jacobian_ang[1] * ang1 + jacobian_ang[2] * ang2); // dip
-        angle_joint.push_back(jacobian_ang[3] * ang0 + jacobian_ang[4] * ang1 + jacobian_ang[5] * ang2); // pip
+        angle_joint.push_back(jacobian_ang[0] * ang0 + jacobian_ang[1] * ang1 + jacobian_ang[2] * ang2); // pip
+        angle_joint.push_back(jacobian_ang[3] * ang0 + jacobian_ang[4] * ang1 + jacobian_ang[5] * ang2); // dip
 
         return angle_joint;
     }

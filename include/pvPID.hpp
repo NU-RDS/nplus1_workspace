@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "kinematics.hpp"
+
 /**
  * @brief PID controller for a single joint
  * 

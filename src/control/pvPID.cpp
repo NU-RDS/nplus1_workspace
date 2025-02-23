@@ -65,7 +65,7 @@ std::vector<float> FingerController::computeTorques(
     const std::vector<float>& feedforward) {
     
     if (target_angles.size() != 2 || current_angles.size() != 2) {
-        std::cout << "Both target and current angles must have size 2";
+        // std::cout << "Both target and current angles must have size 2";
     }
     
     std::vector<float> torques(2);

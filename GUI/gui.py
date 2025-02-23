@@ -35,6 +35,11 @@ class MotorControlGUI:
             self.notebook.add(tab, text=self.tabs[i])
             self.create_controls(tab, i)
 
+        # Create Tensioning tab
+        tensioning_tab = ttk.Frame(self.notebook)
+        self.notebook.add(tensioning_tab, text="Tensioning")
+        self.create_tensioning_controls(tensioning_tab)
+
         # Create feedback display area
         self.create_feedback_display()
 
@@ -68,13 +73,7 @@ class MotorControlGUI:
         )
         ccw_button.pack(side=tk.LEFT, padx=10)
 
-        # Create Auto-Tensioning button
-        auto_tension_button = ttk.Button(
-            button_frame,
-            text="Auto-Tensioning",
-            command=lambda: self.send_command(joint_num, "ten")
-        )
-        auto_tension_button.pack(side=tk.LEFT, padx=10)
+        # Remove Auto-Tensioning button from here
 
         # Create Zero-Impedance button
         zero_imp_button = ttk.Button(
@@ -83,6 +82,20 @@ class MotorControlGUI:
             command=lambda: self.send_command(joint_num, "zero_impedance")
         )
         zero_imp_button.pack(side=tk.LEFT, padx=10)
+
+    def create_tensioning_controls(self, tab):
+        # Create frame for tensioning buttons
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(pady=20)
+
+        # Create buttons for each drive (0, 1, 2)
+        for i in range(3):
+            tension_button = ttk.Button(
+                button_frame,
+                text=f"Tension Drive {i}",
+                command=lambda i=i: self.send_command(i, "ten")
+            )
+            tension_button.pack(side=tk.TOP, pady=5)
 
     def create_feedback_display(self):
         # Create frame for feedback

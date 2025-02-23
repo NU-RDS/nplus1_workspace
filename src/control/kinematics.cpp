@@ -79,31 +79,48 @@ namespace NP1_Kin
         {
             f_offset(force_tendon);
         }
+
+        for (int i = 0; i < 3; i++) {
+            motor_torques[0] = toShaft(force_tendon[i] * R_motor);
+        }
+
+        // float max_val = *max_element(motor_torques, motor_torques+3);
     
-        // now all force on tendon should be positive
-        // calculate for motor torque 
+        // // now all force on tendon should be positive
+        // // calculate for motor torque 
+
+        // float scale =  0.;
+        // if (abs(max_val) > MAX_TORQUE) {
+        //     scale = max_val / MAX_TORQUE;
+        // }
+
+        // if (scale != 0.) {
+        //     for (int i = 0; i < 3; i++) {
+        //         motor_torques[0] = motor_torques[0]*scale;
+        //     }
+        // }
+        
+
         for (int i = 0; i < 3; i++)
         {
-           float motor_torque = toShaft(force_tendon[i] * R_motor);
-           if (abs(motor_torque) < STALL_TORQUE)
+           if (abs(motor_torques[i]) < STALL_TORQUE)
            {
                 if (i == 0) {
-                    motor_torque = -STALL_TORQUE;
+                    motor_torques[i] = -STALL_TORQUE;
                 }
                 else {
-                    motor_torque = STALL_TORQUE;
+                    motor_torques[i] = STALL_TORQUE;
                 }
            }
-           if (abs(motor_torque) > MAX_TORQUE)
+           if (abs(motor_torques[i]) > MAX_TORQUE)
            {
                 if (i == 0) {
-                    motor_torque = -MAX_TORQUE;
+                    motor_torques[i] = -MAX_TORQUE;
                 }
                 else {
-                    motor_torque = MAX_TORQUE;
+                    motor_torques[i] = MAX_TORQUE;
                 }
            }
-           motor_torques[i] = motor_torque;  // Store directly in the static array
         }
     
         return motor_torques;

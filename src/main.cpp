@@ -43,7 +43,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(0.1, 0.0, 0.0, 0.1, 0.0, 0.0);
+FingerController controller = FingerController(0.01, 0.0001, 0.0, 0.01, 0.0001, 0.0);
 
 // CAN setup implementation
 bool setupCan() {

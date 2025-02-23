@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 
 namespace NP1_Kin
@@ -10,7 +11,7 @@ namespace NP1_Kin
     constexpr float R_motor = .009;  // Replace with your R value
     constexpr float R_joint = 0.00858;
     constexpr float STALL_TORQUE = 0.0;
-    constexpr float MAX_TORQUE = .04;
+    constexpr float MAX_TORQUE = .03;
     constexpr float jacobian_ang[6] = {-0.33333f, 0.33333f, 0.33333f, 0.0f, 0.5f, -0.5f}; // 2x3
     constexpr float GEAR_RATIO = 22.6;
     // constexpr float jacobian_tor[6] = {0};

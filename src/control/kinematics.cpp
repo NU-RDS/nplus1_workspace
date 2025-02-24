@@ -27,7 +27,7 @@ namespace NP1_Kin
 
         // Convert tension values to torques in the motor shaft
         for (int i = 0; i < 3; i++) {
-            motor_torques[0] = toShaft(tendon_tensions[i] * R_motor);
+            motor_torques[i] = toShaft(tendon_tensions[i] * R_motor);
         }
 
         return motor_torques;
@@ -49,6 +49,10 @@ namespace NP1_Kin
             else {
                 temp = tendon_tensions[i]*-1.f;
             }
+            if (temp > alpha)
+            {
+                alpha = temp;
+            }
         }
 
         for (size_t i = 0; i < tendon_tensions.size(); i++)
@@ -67,22 +71,24 @@ namespace NP1_Kin
     }
 
 
+    
     std::vector<float> scaleTorque(const std::vector<float>& motor_torques) {
-        float min_original = *std::min_element(motor_torques.begin(), motor_torques.end());
-        float max_original = *std::max_element(motor_torques.begin(), motor_torques.end());
-    
-        std::vector<float> scaled_torques;
-    
-        for (float torque : motor_torques) {
-            float scaled = STALL_TORQUE + ((torque - min_original) / (max_original - min_original)) * (MAX_TORQUE - STALL_TORQUE);
-            scaled_torques.push_back(scaled);
+        // Initialize scaled_torques
+        std::vector<float> scaled_torques(3);
+
+        for (size_t i = 0; i < motor_torques.size(); i++) {
+            if (motor_torques[i] > MAX_TORQUE) {
+                scaled_torques[i] = MAX_TORQUE;
+            }
+            else if (motor_torques[i] < STALL_TORQUE) {
+                scaled_torques[i] = STALL_TORQUE;
+            }
+            else {
+                scaled_torques[i] = motor_torques[i];
+            }
         }
-    
+
         return scaled_torques;
-    }
-
-    std::vector<float> setMotorTorques(const std::vector<float>& motor_torques) {
-
     }
 
     // motor angle to joint angle
@@ -90,8 +96,8 @@ namespace NP1_Kin
     {
         std::vector<float> joint_angles(2);
         
-        for (size_t i = 0; i < jacobian_ang[0].size(); i++){
-            joint_angles[i] = jacobian_ang[0][i] * motor_angle_0 + jacobian_ang[1][i] * motor_angle_1 + jacobian_ang[0][i] * motor_angle_2;
+        for (size_t i = 0; i < jacobian_ang.size(); i++){
+            joint_angles[i] = jacobian_ang[i][0] * motor_angle_0 + jacobian_ang[i][1] * motor_angle_1 + jacobian_ang[i][2] * motor_angle_2;
         }
 
         return joint_angles;
@@ -101,8 +107,8 @@ namespace NP1_Kin
     {
         std::vector<float> motor_angles(3);
 
-        for (size_t i = 0; i < jacobian_ang.size(); i++) {
-            motor_angles[i] = jacobian_ang[i][0] * proximal_angle + jacobian_ang[i][1] * distal_angle;
+        for (size_t i = 0; i < jacobian_ang[0].size(); i++) {
+            motor_angles[i] = jacobian_ang[0][i] * proximal_angle + jacobian_ang[1][i] * distal_angle;
         }
 
         return motor_angles;

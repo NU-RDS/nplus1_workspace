@@ -72,13 +72,8 @@ std::vector<float> FingerController::computeTorques(
         proximal_joint.computeTorque(target_angles[0], current_angles[0]),
         distal_joint.computeTorque(target_angles[1], current_angles[1])
     };
-
-    std::vector<float> tendon_force = NP1_Kin::calcTendonForce(control_torques[0], control_torques[1]);
-    std::vector<float> offset_tensions = NP1_Kin::offsetTensions(tendon_force);
-    std::vector<float> computed_motor_torques = NP1_Kin::tensionToMotorTorque(offset_tensions);
-    std::vector<float> scaled_motor_torques = NP1_Kin::scaleTorque(computed_motor_torques);
     
-    return scaled_motor_torques;
+    return control_torques;
 }
 
 // Reset both joint controllers

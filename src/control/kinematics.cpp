@@ -76,18 +76,23 @@ namespace NP1_Kin
         // Initialize scaled_torques
         std::vector<float> scaled_torques(3);
 
+        // Find the maximum absolute value among the torque values
+        float maxValue = 0.0;
         for (size_t i = 0; i < motor_torques.size(); i++) {
-            if (motor_torques[i] > MAX_TORQUE) {
-                scaled_torques[i] = MAX_TORQUE;
-            }
-            else if (motor_torques[i] < STALL_TORQUE) {
-                scaled_torques[i] = STALL_TORQUE;
-            }
-            else {
-                scaled_torques[i] = motor_torques[i];
+            maxValue = std::max(maxValue, motor_torques[i]);
+        }
+        
+        // Check if scaling is needed
+        if (maxValue > MAX_TORQUE) {
+            // Calculate the scaling factor
+            float scaleFactor = MAX_TORQUE / maxValue;
+            
+            // Scale all torques proportionally
+            for (size_t i = 0; i < motor_torques.size(); i++) {
+                scaled_torques[i] = motor_torques[i]*scaleFactor;
             }
         }
-
+        
         return scaled_torques;
     }
 

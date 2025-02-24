@@ -146,12 +146,6 @@ void processSerialCommand() {
     }
 }
 
-void setupController(int index) {
-    controllers[index].setPositionGains(1.0, 0.1, 0.01);
-    controllers[index].setVelocityGains(0.1, 0.01, 0.001);
-    controllers[index].setTorqueLimits(-CONSTANT_TORQUE, CONSTANT_TORQUE);
-}
-
 void setup() {
     Serial.begin(115200);
     while (!Serial) delay(100);

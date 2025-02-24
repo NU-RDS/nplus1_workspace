@@ -1,0 +1,20 @@
+backend/venv/
+# Ignore Python virtual environments
+venv/
+env/
+
+# Ignore compiled Python files and libraries
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore all site-packages (installed libraries)
+**/site-packages/
+
+# Ignore large libraries
+RDS_GUI/backend/venv/Lib/site-packages/mediapipe/
+RDS_GUI/backend/venv/Lib/site-packages/tensorflow/
+RDS_GUI/backend/venv/Lib/site-packages/cv2/
+RDS_GUI/backend/venv/Lib/site-packages/jaxlib/
+RDS_GUI/backend/venv/Lib/site-packages/clang/

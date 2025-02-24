@@ -47,7 +47,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(0.05, 0.05, 0.7, 0.05, 0.05, 0.7);
+FingerController controller = FingerController(0.02, 0.001, 4.0, 0.02, 0.001, 4.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -271,6 +271,7 @@ void tension(int &tensionID) {
     // Get initial position (motor_angle) once all tensioned
     if (tensioned[0] && tensioned[1] && tensioned[2] && !got_init)
     {
+        delay(5000);
         pumpEvents(can_intf);
         for (int i = 0; i < NUM_DRIVES; i++)
         {

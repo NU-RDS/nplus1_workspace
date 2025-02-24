@@ -399,9 +399,9 @@ void loop() {
     }
 
     // Serial.println("Enter control loop.");
-    if (PID && tensioned[0] && tensioned[1] && tensioned[2]){
-        controlLoop();
-    }
+    // if (PID && tensioned[0] && tensioned[1] && tensioned[2]){
+    //     controlLoop();
+    // }
 
     // Serial.println("Check for errors.");
     checkErrors();

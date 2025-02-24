@@ -43,7 +43,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+FingerController controller = FingerController(0.005, 0.0, 0.0, 0.005, 0.0, 0.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -374,16 +374,16 @@ void controlLoop() {
     std::vector<float> scaled_motor_torques = NP1_Kin::scaleTorque(computed_motor_torques);
     Serial.println("Scaled motor torques: ");
     Serial.print("Scaled torque 1: ");
-    Serial.println(scaled_motor_torques[1] * tension_dir[1], 5);
+    Serial.println(scaled_motor_torques[1] * tension_dir[1], 16);
     Serial.print("Scaled torque 2: ");
-    Serial.println(scaled_motor_torques[2] * tension_dir[2], 5);
+    Serial.println(scaled_motor_torques[2] * tension_dir[2], 16);
     Serial.print("Scaled torque 3: ");
-    Serial.println(scaled_motor_torques[0] * tension_dir[0], 5);
+    Serial.println(scaled_motor_torques[0] * tension_dir[0], 16);
     
     // command torque
     for (int i = 0; i < NUM_DRIVES; i++)
     {
-        odrives[i].current_torque = scaled_motor_torques[i]*tension_dir[i];
+        odrives[i].current_torque = 0.5f;
         odrives[i].is_running = true;
         odrives[i].drive.setTorque(scaled_motor_torques[i]*tension_dir[i]);
         Serial.println(scaled_motor_torques[i]*tension_dir[i], 5);

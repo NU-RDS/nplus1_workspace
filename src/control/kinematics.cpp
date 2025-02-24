@@ -13,8 +13,8 @@ namespace NP1_Kin
         std::vector<float> tensions(3);
 
         // Use A_dagger to calculate tension distribution of each tendon on finger joints
-        for (size_t i =0; i < A_dagger.size(); i++){
-            tensions[i] = A_dagger[i][0] * proximal_torque + A_dagger[i][1] * distal_torque;
+        for (size_t i =0; i < A_pinv.size(); i++){
+            tensions[i] = A_pinv[i][0] * proximal_torque + A_pinv[i][1] * distal_torque;
         }
 
         return tensions;
@@ -101,8 +101,8 @@ namespace NP1_Kin
     {
         std::vector<float> joint_angles(2);
         
-        for (size_t i = 0; i < jacobian_ang.size(); i++){
-            joint_angles[i] = jacobian_ang[i][0] * motor_angle_0 + jacobian_ang[i][1] * motor_angle_1 + jacobian_ang[i][2] * motor_angle_2;
+        for (size_t i = 0; i < transmission_mat.size(); i++){
+            joint_angles[i] = transmission_mat[i][0] * motor_angle_0 + transmission_mat[i][1] * motor_angle_1 + transmission_mat[i][2] * motor_angle_2;
         }
 
         return joint_angles;
@@ -112,8 +112,8 @@ namespace NP1_Kin
     {
         std::vector<float> motor_angles(3);
 
-        for (size_t i = 0; i < jacobian_ang[0].size(); i++) {
-            motor_angles[i] = jacobian_ang[0][i] * proximal_angle + jacobian_ang[1][i] * distal_angle;
+        for (size_t i = 0; i < RAT.size(); i++) {
+            motor_angles[i] = RAT[i][0] * proximal_angle + RAT[i][1] * distal_angle;
         }
 
         return motor_angles;

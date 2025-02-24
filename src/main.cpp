@@ -43,7 +43,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(0.01, 0.0001, 0.0, 0.01, 0.0001, 0.0);
+FingerController controller = FingerController(1.0, 0.01, 0.0, 1.0, 0.01, 0.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -177,7 +177,7 @@ void setup() {
         Serial.println(init_pos[i]);
     }
 
-    current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+    current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
     Serial.print("Initial joint angles: ");
     Serial.print(current_joint_angles[0]);
     Serial.print(current_joint_angles[1]);
@@ -299,7 +299,7 @@ void tension(int &tensionID) {
             Serial.println(init_pos[i]);
         }
 
-        current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+        current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
         Serial.print("Initial joint angles: ");
         Serial.print(current_joint_angles[0]);
         Serial.print(current_joint_angles[1]);
@@ -310,7 +310,6 @@ void tension(int &tensionID) {
 }
 
 void controlLoop() {
-    // get motor angle current encoder reading
     for (int i = 0; i < NUM_DRIVES; i++)
     {
         Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
@@ -323,7 +322,7 @@ void controlLoop() {
     }
     
     // motor shaft to joint ang
-    current_joint_angles = NP1_Kin::angle_m2j(motor_ang[0], motor_ang[1], motor_ang[2]);
+    current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
     Serial.println("Target joint angles: ");
     Serial.println(target_joint_angles[0]);
     Serial.println(target_joint_angles[1]);
@@ -332,40 +331,18 @@ void controlLoop() {
     Serial.println(current_joint_angles[0]);
     Serial.println(current_joint_angles[1]);
     
-    
-    std::vector<float> joint_torques = controller.computeTorques(target_joint_angles, current_joint_angles);
-    Serial.println("Computed joint torques: ");
-    Serial.print("Joint 1: ");
-    Serial.println(joint_torques[0], 4);
-    Serial.print("Joint 2: ");
-    Serial.println(joint_torques[1], 4);
-    float* force_tendon = f_tendon(joint_torques[0], joint_torques[1]);
-    Serial.println("Tensions: ");
-    Serial.print("Tension of motor 0: ");
-    Serial.println(force_tendon[0], 4);
-    Serial.print("Tension of motor 1: ");
-    Serial.println(force_tendon[1], 4);
-    Serial.print("Tension of motor 2: ");
-    Serial.println(force_tendon[2], 4);
-    float* motor_torque = NP1_Kin::torque_j2m(force_tendon);
-    Serial.println("Computed motor torques: ");
-    Serial.print("Motor 0: ");
-    Serial.println(motor_torque[0], 4);
-    Serial.print("Motor 1: ");
-    Serial.println(motor_torque[1], 4);
-    Serial.print("Motor 2: ");
-    Serial.println(motor_torque[2], 4);
+    std::vector<float> motor_torques = controller.computeTorques(target_joint_angles, current_joint_angles);
     
     // command torque
     for (int i = 0; i < NUM_DRIVES; i++)
     {
-        odrives[i].current_torque = motor_torque[i];
-        odrives[i].is_running = true;
-        odrives[i].drive.setTorque(motor_torque[i]);
+        // odrives[i].current_torque = motor_torques[i];
+        // odrives[i].is_running = true;
+        // odrives[i].drive.setTorque(motor_torques[i]);
         Serial.print("Motor ");
         Serial.print(i);
         Serial.print(" torque is ");
-        Serial.println(motor_torque[i], 5);
+        Serial.println(motor_torques[i], 5);
     }
     Serial.println("--------------------------------");
 }

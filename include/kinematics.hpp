@@ -7,26 +7,34 @@
 
 namespace NP1_Kin
 {
+    // Mechanical design constants
     constexpr float KIN_PI = 3.1415;
-    constexpr float R_motor = .009;  // Replace with your R value
+    constexpr float R_motor = 0.009;
     constexpr float R_joint = 0.00858;
     constexpr float STALL_TORQUE = 0.0;
     constexpr float MAX_TORQUE = .03;
-    constexpr float jacobian_ang[6] = {-0.33333f, 0.33333f, 0.33333f, 0.0f, 0.5f, -0.5f}; // 2x3
     constexpr float GEAR_RATIO = 22.6;
-    // constexpr float jacobian_tor[6] = {0};
-    constexpr float A_dagger[6] = {-38.85003885, 0., 38.85003885, 58.2750582751, 38.85003885, -58.2750582751}; // changed to reflect motor numbers not joint numbers
 
-    // helper: torque to tendon force
-    float* f_tendon(float tor0, float tor1);
-    // helper: force offset
-    void f_offset(float* tendon);
+    // Kinematics matrices
+    const std::vector<std::vector<float>> jacobian_ang = {
+        {-0.33333f, 0.33333f, 0.33333f},
+        {0.0f, 0.5f, -0.5f}
+    };
+    const std::vector<std::vector<float>> A_dagger = {
+        {-38.85003885, 0.},
+        {38.85003885, 58.2750582751},
+        {38.85003885, -58.2750582751}
+    };
 
-    // joint toruqe to motor torque
-    float* torque_j2m(float* force_tendon);
+    // Torque calculation functiona
+    std::vector<float> calcTendonForce(float proximal_torque, float distal_torque);
+    std::vector<float> tensionToMotorTorque(const std::vector<float>& tendon_tensions);
+    std::vector<float> offsetTensions(const std::vector<float>& tendon_tensions);
+    std::vector<float> scaleTorque(const std::vector<float>& motor_torques);
 
-    // motor angle to joint angle
-    std::vector<float> angle_m2j(float ang1, float ang2, float ang3);
+    // Angle conversion functions
+    std::vector<float> motorAngleToJoint(float motor_angle_0, float motor_angle_1, float motor_angle_2);
+    std::vector<float> jointAngleToMotor(float proximal_angle, float distal_angle);
 
     // radian to degree
     float RadToDeg(float ang);

@@ -43,7 +43,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(0.005, 0.0, 0.0, 0.005, 0.0, 0.0);
+FingerController controller = FingerController(0.1, 0.05, 0.7, 0.1, 0.05, 0.7);
 
 // CAN setup implementation
 bool setupCan() {
@@ -118,7 +118,7 @@ void processSerialCommand() {
                 if (jointNum >= 0 && jointNum < NUM_JOINTS) {
                     // Your existing rotation logic
                     bool clockwise = cmd.equals("forward");
-                    float angle = clockwise ? 1.f : -1.f;
+                    float angle = clockwise ? 5.f : -5.f;
                     target_joint_angles[jointNum] += angle;
 
                     Serial.println("Moving joint angle.");
@@ -165,25 +165,6 @@ void setup() {
     }
 
     Serial.println("All ODrives ready!");
-
-    delay(5000);
-    for (int i = 0; i < NUM_DRIVES; i++)
-    {
-        Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
-        init_pos[i] = encoder.Pos_Estimate;
-        Serial.print("Motor ");
-        Serial.print(i);
-        Serial.print(" is at ");
-        Serial.println(init_pos[i]);
-    }
-
-    current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
-    Serial.print("Initial joint angles: ");
-    Serial.print(current_joint_angles[0]);
-    Serial.print(current_joint_angles[1]);
-    // set got_init
-    got_init = true;
-    PID = true;
 }
 
 void checkErrors(void) {
@@ -221,6 +202,7 @@ void tension(int &tensionID) {
 
         while (doTension[tensionID] && (!tensioned[tensionID]))
         {
+            pumpEvents(can_intf);
             unsigned long current_time = millis();
             if (current_time - last_measurement_time >= 100)  // 100ms between measurements
             {
@@ -265,30 +247,27 @@ void tension(int &tensionID) {
                 }
                 else if (tensionID == 1)
                 {
-                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
-                    odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
-                }
-                else if (tensionID == 2)
-                {
                     odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
                     odrives[tensionID].is_running = true;
                     odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                }
+                else if (tensionID == 2)
+                {
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
+                    odrives[tensionID].is_running = true;
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
                 }
 
                 prev_pos = feedback.Pos_Estimate;
                 last_measurement_time = current_time;
             }
         }
-        odrives[tensionID].drive.setAbsolutePosition(0.0);
-        tensionID = -1;
     }
-
 
     // Get initial position (motor_angle) once all tensioned
     if (tensioned[0] && tensioned[1] && tensioned[2] && !got_init)
     {
-        delay(5000);
+        pumpEvents(can_intf);
         for (int i = 0; i < NUM_DRIVES; i++)
         {
             Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
@@ -299,7 +278,10 @@ void tension(int &tensionID) {
             Serial.println(init_pos[i]);
         }
 
-        current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
+        std::vector<float> joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
+        for (int i = 0; i < NUM_JOINTS; i++) {
+            current_joint_angles[i] = joint_angles[i];
+        }
         Serial.print("Initial joint angles: ");
         Serial.print(current_joint_angles[0]);
         Serial.print(current_joint_angles[1]);

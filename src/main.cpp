@@ -226,15 +226,15 @@ void tension(int &tensionID) {
                     Serial.println(" is tensioned. ");
                     if (tensionID > 0)
                     {
-                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.0012f;
                         odrives[tensionID].is_running = true;
-                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.0012f);
                     }
                     else
                     {
-                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.015f;
+                        odrives[tensionID].current_torque = tension_dir[tensionID] * 0.018f;
                         odrives[tensionID].is_running = true;
-                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.015f);
+                        odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.018f);
                     }
                     tensioned[tensionID] = true;
                     break;
@@ -247,15 +247,15 @@ void tension(int &tensionID) {
                 }
                 else if (tensionID == 1)
                 {
-                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.003f;
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.0012f;
                     odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.003f);
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.0012f);
                 }
                 else if (tensionID == 2)
                 {
-                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.004f;
+                    odrives[tensionID].current_torque = tension_dir[tensionID] * 0.0012f;
                     odrives[tensionID].is_running = true;
-                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.004f);
+                    odrives[tensionID].drive.setTorque(tension_dir[tensionID] * 0.0012f);
                 }
 
                 prev_pos = feedback.Pos_Estimate;
@@ -381,11 +381,13 @@ void loop() {
     processSerialCommand();
 
     // Serial.println("Tension tendons.");
-    // tension(tensionID);
-    
+    if (!tensioned[0] || !tensioned[1] || !tensioned[2])
+    {
+        tension(tensionID);
+    }
 
     // Serial.println("Enter control loop.");
-    if (PID){
+    if (PID && tensioned[0] && tensioned[1] && tensioned[2]){
         controlLoop();
     }
 

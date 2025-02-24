@@ -35,6 +35,10 @@ float JointPIDController::computeTorque(float target_angle, float current_angle,
     // Compute error
     float error = target_angle - current_angle;
 
+    if (error < 0.3) {
+        error = 0.0;
+    }
+
     // Update integral term with anti-windup
     integral_error += error * dt;
 

@@ -43,7 +43,7 @@ std::vector<float> current_joint_angles(3);
 // PID
 using namespace NP1_Kin;
 
-FingerController controller = FingerController(0.1, 0.05, 0.7, 0.1, 0.05, 0.7);
+FingerController controller = FingerController(0.02, 0.001, 4.0, 0.02, 0.001, 4.0);
 
 // CAN setup implementation
 bool setupCan() {
@@ -165,6 +165,25 @@ void setup() {
     }
 
     Serial.println("All ODrives ready!");
+
+    delay(5000);
+    for (int i = 0; i < NUM_DRIVES; i++)
+    {
+        Get_Encoder_Estimates_msg_t encoder = odrives[i].user_data.last_feedback;
+        init_pos[i] = encoder.Pos_Estimate;
+        Serial.print("Motor ");
+        Serial.print(i);
+        Serial.print(" is at ");
+        Serial.println(init_pos[i]);
+    }
+
+    current_joint_angles = NP1_Kin::motorAngleToJoint(motor_ang[0], motor_ang[1], motor_ang[2]);
+    Serial.print("Initial joint angles: ");
+    Serial.print(current_joint_angles[0]);
+    Serial.print(current_joint_angles[1]);
+    // set got_init
+    got_init = true;
+    PID = true;
 }
 
 void checkErrors(void) {
@@ -267,6 +286,7 @@ void tension(int &tensionID) {
     // Get initial position (motor_angle) once all tensioned
     if (tensioned[0] && tensioned[1] && tensioned[2] && !got_init)
     {
+        delay(5000);
         pumpEvents(can_intf);
         for (int i = 0; i < NUM_DRIVES; i++)
         {
@@ -336,22 +356,22 @@ void controlLoop() {
 
     // offset tensions if any require un-tensioning
     std::vector<float> offset_tensions = NP1_Kin::offsetTensions(tendon_force);
-    Serial.println("Offset tensions: ");
-    Serial.print("Tendon 1: ");
-    Serial.println(offset_tensions[1], 5);
-    Serial.print("Tendon 2: ");
-    Serial.println(offset_tensions[2], 5);
-    Serial.print("Tendon 3: ");
-    Serial.println(offset_tensions[0], 5);
+    // Serial.println("Offset tensions: ");
+    // Serial.print("Tendon 1: ");
+    // Serial.println(offset_tensions[1], 5);
+    // Serial.print("Tendon 2: ");
+    // Serial.println(offset_tensions[2], 5);
+    // Serial.print("Tendon 3: ");
+    // Serial.println(offset_tensions[0], 5);
 
     std::vector<float> computed_motor_torques = NP1_Kin::tensionToMotorTorque(offset_tensions);
-    Serial.println("Raw motor torques: ");
-    Serial.print("Tendon torque 1: ");
-    Serial.println(computed_motor_torques[1], 5);
-    Serial.print("Tendon torque 2: ");
-    Serial.println(computed_motor_torques[2], 5);
-    Serial.print("Tendon torque 3: ");
-    Serial.println(computed_motor_torques[0], 5);
+    // Serial.println("Raw motor torques: ");
+    // Serial.print("Tendon torque 1: ");
+    // Serial.println(computed_motor_torques[1], 5);
+    // Serial.print("Tendon torque 2: ");
+    // Serial.println(computed_motor_torques[2], 5);
+    // Serial.print("Tendon torque 3: ");
+    // Serial.println(computed_motor_torques[0], 5);
 
     std::vector<float> scaled_motor_torques = NP1_Kin::scaleTorque(computed_motor_torques);
     Serial.println("Scaled motor torques: ");

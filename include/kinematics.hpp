@@ -12,7 +12,7 @@ namespace NP1_Kin
     constexpr float R_motor = 0.009;
     constexpr float R_joint = 0.00858;
     constexpr float STALL_TORQUE = 0.0;
-    constexpr float MAX_TORQUE = .005;
+    constexpr float MAX_TORQUE = .006;
     constexpr float GEAR_RATIO = 22.6;
 
     // Kinematics matrices

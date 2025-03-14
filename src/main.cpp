@@ -24,7 +24,7 @@ const unsigned long FEEDBACK_DELAY = 100;  // Delay between feedback prints (ms)
 
 bool tensioned[3] = {false, false, false};
 bool doTension[3] = {false, false, false};
-float tension_dir[3] = {-1., -1., 1.};
+float tension_dir[3] = {-1., 1., 1.};
 int tensionID = -1;
 
 // CAN setup implementation
